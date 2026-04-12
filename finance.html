@@ -7,7 +7,7 @@
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
     <style>
-        /* ===== CSS SAMA PERSIS DENGAN HALAMAN LAIN ===== */
+        /* ===== CSS SAMA SEPERTI SEBELUMNYA ===== */
         * { margin:0; padding:0; box-sizing:border-box; font-family:system-ui, sans-serif; }
         body { background:#f5f5f5; color:#333; font-size:14px; }
         .text-primary { color:#006B54; }
@@ -18,8 +18,6 @@
         .btn-login:hover { background:#004d3b; }
         .btn-sync { background:transparent; border:1px solid #006B54; color:#006B54; padding:0.4rem 1rem; border-radius:6px; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:0.4rem; margin-right:0.5rem; font-size:0.9rem; }
         .btn-sync:hover { background:#e6f0ec; }
-        .reset-btn { position:fixed; bottom:20px; right:20px; background:#dc3545; color:white; border:none; border-radius:50px; padding:0.8rem 1.2rem; font-weight:bold; cursor:pointer; box-shadow:0 4px 8px rgba(0,0,0,0.2); z-index:1000; display:flex; align-items:center; gap:0.5rem; font-size:0.9rem; }
-        .reset-btn:hover { background:#c82333; }
         .sidebar { position:fixed; top:0; left:0; width:260px; height:100%; background:white; box-shadow:2px 0 8px rgba(0,0,0,0.05); transform:translateX(-100%); transition:transform 0.3s; z-index:200; padding:1.2rem 0.8rem; overflow-y:auto; display:flex; flex-direction:column; }
         .sidebar.open { transform:translateX(0); }
         .sidebar-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; padding-bottom:0.8rem; border-bottom:1px solid #eee; }
@@ -42,10 +40,10 @@
         .main-content { padding:1.5rem; max-width:1200px; margin:0 auto; }
         .page-title { margin-bottom:1.2rem; font-size:1.6rem; font-weight:600; color:#006B54; }
 
-        /* ===== FINANCE SPECIFIC STYLES ===== */
+        /* Dashboard Cards */
         .dashboard-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
@@ -71,7 +69,8 @@
             color: #999;
             font-weight: normal;
         }
-        /* Tab bar untuk layar besar */
+
+        /* Tabs */
         .finance-tabs {
             display: flex;
             gap: 0.5rem;
@@ -81,8 +80,8 @@
             border-radius: 20px;
             border: 1px solid #f0f0f0;
             width: fit-content;
+            flex-wrap: wrap;
         }
-        /* Tombol menu mobile (hanya muncul di layar kecil) */
         .mobile-tab-menu {
             display: none;
             margin-bottom: 1rem;
@@ -115,7 +114,8 @@
             background: #006B54;
             color: white;
         }
-        /* Drawer (modal) untuk tab di mobile */
+
+        /* Drawer Mobile */
         .tab-drawer {
             position: fixed;
             bottom: 0;
@@ -228,11 +228,6 @@
             border-radius: 20px;
             font-size: 0.9rem;
         }
-        .filter-bar .date-range {
-            display: flex;
-            gap: 0.3rem;
-            align-items: center;
-        }
         .btn {
             background: #006B54;
             color: white;
@@ -249,9 +244,7 @@
             border: 1px solid #006B54;
             color: #006B54;
         }
-        .btn-outline:hover {
-            background: #e6f0ec;
-        }
+
         .modal {
             display: none;
             position: fixed;
@@ -295,68 +288,42 @@
             display: block;
             margin-bottom: 0.3rem;
             font-weight: 500;
-            color: #333;
         }
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 0.6rem 0.8rem;
             border: 1px solid #ddd;
             border-radius: 20px;
-            font-size: 0.95rem;
-        }
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #006B54;
         }
 
-        /* ===== LOGIN MODAL ===== */
+        /* Login Modal */
         #loginModal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5);
             z-index: 1000;
             align-items: center;
             justify-content: center;
         }
         #loginModal .modal-content {
-            background: white;
-            border-radius: 20px;
             width: 300px;
-            padding: 20px;
             text-align: center;
         }
-        #loginModal h3 {
-            color: #006B54;
-            margin-bottom: 15px;
-        }
+        #loginModal h3 { color: #006B54; margin-bottom: 15px; }
         #loginModal input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 15px;
+            width: 100%; padding: 10px; margin-bottom: 10px;
+            border: 1px solid #ddd; border-radius: 15px;
         }
         #loginModal button {
-            width: 100%;
-            padding: 12px;
-            background: #006B54;
-            color: white;
-            border: none;
-            border-radius: 15px;
-            font-weight: 600;
-            cursor: pointer;
+            width: 100%; padding: 12px;
+            background: #006B54; color: white;
+            border: none; border-radius: 15px;
+            font-weight: 600; cursor: pointer;
         }
-        #loginError {
-            color: red;
-            margin-top: 10px;
-            display: none;
-        }
+        #loginError { color: red; margin-top: 10px; display: none; }
 
-        /* ===== FOOTER SIDEBAR UNTUK LOCAL USER INFO ===== */
+        /* Sidebar footer */
         .sidebar-footer {
             margin-top: auto;
             padding-top: 1rem;
@@ -373,7 +340,6 @@
         .local-user-info span {
             font-weight: 600;
             color: #006B54;
-            font-size: 0.9rem;
         }
         .local-logout-btn {
             background: #dc3545;
@@ -381,18 +347,12 @@
             border: none;
             border-radius: 6px;
             padding: 0.4rem 1rem;
-            font-size: 0.9rem;
             cursor: pointer;
         }
 
-        /* Responsif: sembunyikan tab bar di layar kecil, tampilkan tombol menu */
         @media (max-width: 768px) {
-            .finance-tabs {
-                display: none;
-            }
-            .mobile-tab-menu {
-                display: block;
-            }
+            .finance-tabs { display: none; }
+            .mobile-tab-menu { display: block; }
         }
     </style>
 </head>
@@ -415,8 +375,8 @@
                     <i data-feather="chevron-down" class="arrow"></i>
                 </a>
                 <ul class="submenu">
-                    <li><a href="sales.html" id="submenuSales"><i data-feather="shopping-cart"></i> Sales</a></li>
-                    <li><a href="sales-list.html" id="submenuDaftarSales"><i data-feather="list"></i> Daftar Sales</a></li>
+                    <li><a href="sales.html"><i data-feather="shopping-cart"></i> Sales</a></li>
+                    <li><a href="sales-list.html"><i data-feather="list"></i> Daftar Sales</a></li>
                 </ul>
             </li>
             <li><a href="purchase.html" class="menu-link"><i data-feather="truck"></i> Purchase</a></li>
@@ -426,7 +386,6 @@
             <li><a href="report.html" class="menu-link"><i data-feather="bar-chart-2"></i> Report</a></li>
             <li><a href="setting.html" class="menu-link"><i data-feather="settings"></i> Setting</a></li>
         </ul>
-        <!-- Footer Sidebar: info user lokal dan tombol logout -->
         <div class="sidebar-footer">
             <div class="local-user-info" id="localUserInfo" style="display: none;">
                 <span id="local-user-name"></span>
@@ -457,7 +416,7 @@
         </div>
     </div>
 
-    <!-- Konten Utama (disembunyikan jika belum login lokal) -->
+    <!-- Main Content -->
     <main class="main-content" id="mainContent">
         <h1 class="page-title">Finance</h1>
 
@@ -479,7 +438,6 @@
                 <div class="card-title">Laba Bersih (Bulan Ini)</div>
                 <div class="card-value" id="netProfit">Rp 0</div>
             </div>
-            <!-- Kartu Total Aset (baru) -->
             <div class="card">
                 <div class="card-title">Total Aset</div>
                 <div class="card-value" id="totalAssets">Rp 0</div>
@@ -491,33 +449,27 @@
             <button id="mobileTabMenuBtn"><i data-feather="menu"></i> Pilih Laporan</button>
         </div>
 
-        <!-- Tab Navigation untuk layar besar -->
+        <!-- Tab Navigation Desktop -->
         <div class="finance-tabs">
             <button class="tab-btn active" id="tabCash">Kas & Transaksi</button>
             <button class="tab-btn" id="tabReceivable">Piutang</button>
             <button class="tab-btn" id="tabPayable">Hutang</button>
             <button class="tab-btn" id="tabProfitLoss">Laba Rugi</button>
+            <button class="tab-btn" id="tabTransactionProfit">Laba Transaksi</button>
         </div>
 
-        <!-- Drawer untuk mobile -->
+        <!-- Drawer Mobile -->
         <div class="drawer-overlay" id="drawerOverlay"></div>
         <div class="tab-drawer" id="tabDrawer">
             <div class="drawer-header">
                 <span>Pilih Laporan</span>
                 <i data-feather="x" id="closeDrawer" style="cursor:pointer;"></i>
             </div>
-            <div class="drawer-item" data-tab="cash">
-                <i data-feather="dollar-sign"></i> Kas & Transaksi
-            </div>
-            <div class="drawer-item" data-tab="receivable">
-                <i data-feather="users"></i> Piutang
-            </div>
-            <div class="drawer-item" data-tab="payable">
-                <i data-feather="truck"></i> Hutang
-            </div>
-            <div class="drawer-item" data-tab="profitloss">
-                <i data-feather="bar-chart-2"></i> Laba Rugi
-            </div>
+            <div class="drawer-item" data-tab="cash"><i data-feather="dollar-sign"></i> Kas & Transaksi</div>
+            <div class="drawer-item" data-tab="receivable"><i data-feather="users"></i> Piutang</div>
+            <div class="drawer-item" data-tab="payable"><i data-feather="truck"></i> Hutang</div>
+            <div class="drawer-item" data-tab="profitloss"><i data-feather="bar-chart-2"></i> Laba Rugi</div>
+            <div class="drawer-item" data-tab="transactionprofit"><i data-feather="trending-up"></i> Laba Transaksi</div>
         </div>
 
         <!-- Panel Kas & Transaksi -->
@@ -547,9 +499,7 @@
                             <th>Aksi</th>
                         </tr>
                     </thead>
-                    <tbody id="cashTransactionsBody">
-                        <tr><td colspan="7" style="text-align:center;">Memuat data...</td></tr>
-                    </tbody>
+                    <tbody id="cashTransactionsBody"></tbody>
                 </table>
             </div>
         </div>
@@ -562,18 +512,8 @@
             </div>
             <div class="table-responsive">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th>Total Piutang</th>
-                            <th>Jatuh Tempo</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="receivableBody">
-                        <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
-                    </tbody>
+                    <thead><tr><th>Customer</th><th>Total Piutang</th><th>Jatuh Tempo</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <tbody id="receivableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -586,18 +526,8 @@
             </div>
             <div class="table-responsive">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Supplier</th>
-                            <th>Total Hutang</th>
-                            <th>Jatuh Tempo</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="payableBody">
-                        <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
-                    </tbody>
+                    <thead><tr><th>Supplier</th><th>Total Hutang</th><th>Jatuh Tempo</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <tbody id="payableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -612,12 +542,7 @@
             </div>
             <div class="table-responsive">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Keterangan</th>
-                            <th>Jumlah</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Keterangan</th><th>Jumlah</th></tr></thead>
                     <tbody id="profitLossBody">
                         <tr><td>Total Penjualan</td><td id="totalSales">Rp 0</td></tr>
                         <tr><td>HPP (Harga Pokok Penjualan)</td><td id="totalHPP">Rp 0</td></tr>
@@ -625,6 +550,32 @@
                         <tr><td>Total Pengeluaran</td><td id="totalExpense">Rp 0</td></tr>
                         <tr><td style="font-weight:600; color:#006B54;">Laba Bersih</td><td id="netProfitDetail">Rp 0</td></tr>
                     </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Panel Laba Transaksi -->
+        <div id="panelTransactionProfit" style="display: none;">
+            <div class="filter-bar">
+                <input type="date" id="startDateTP">
+                <span>s/d</span>
+                <input type="date" id="endDateTP">
+                <button class="btn" id="filterTPBtn">Tampilkan</button>
+            </div>
+            <div class="table-responsive">
+                <table id="transactionProfitTable">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>No. Transaksi</th>
+                            <th>Total Penjualan</th>
+                            <th>HPP</th>
+                            <th>Laba Kotor</th>
+                            <th>Metode Bayar</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionProfitBody"></tbody>
                 </table>
             </div>
         </div>
@@ -638,41 +589,26 @@
                 <button class="close-modal" id="closeModalCash">&times;</button>
             </div>
             <form id="formCash">
-                <div class="form-group">
-                    <label>Tanggal</label>
-                    <input type="date" id="cashDate" required>
-                </div>
-                <div class="form-group">
-                    <label>Deskripsi</label>
-                    <input type="text" id="cashDesc" required>
-                </div>
-                <div class="form-group">
-                    <label>Kategori</label>
+                <div class="form-group"><label>Tanggal</label><input type="date" id="cashDate" required></div>
+                <div class="form-group"><label>Deskripsi</label><input type="text" id="cashDesc" required></div>
+                <div class="form-group"><label>Kategori</label>
                     <select id="cashCategory" required>
-                        <option value="">Pilih Kategori</option>
+                        <option value="">Pilih</option>
                         <option value="Penjualan">Penjualan</option>
                         <option value="Pembelian">Pembelian</option>
                         <option value="Gaji">Gaji</option>
                         <option value="Sewa">Sewa</option>
-                        <option value="Listrik">Listrik</option>
-                        <option value="Air">Air</option>
-                        <option value="Internet">Internet</option>
                         <option value="Lain-lain">Lain-lain</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Tipe</label>
+                <div class="form-group"><label>Tipe</label>
                     <select id="cashType" required>
                         <option value="income">Pemasukan</option>
                         <option value="expense">Pengeluaran</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Jumlah (Rp)</label>
-                    <input type="number" id="cashAmount" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label>Metode Pembayaran</label>
+                <div class="form-group"><label>Jumlah (Rp)</label><input type="number" id="cashAmount" min="0" required></div>
+                <div class="form-group"><label>Metode</label>
                     <select id="cashMethod">
                         <option value="Tunai">Tunai</option>
                         <option value="Transfer">Transfer</option>
@@ -680,10 +616,7 @@
                         <option value="E-Wallet">E-Wallet</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Referensi (opsional)</label>
-                    <input type="text" id="cashRef" placeholder="ID transaksi terkait">
-                </div>
+                <div class="form-group"><label>Referensi</label><input type="text" id="cashRef"></div>
                 <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
                     <button type="button" class="btn-outline" onclick="document.getElementById('closeModalCash').click()">Batal</button>
                     <button type="submit" class="btn">Simpan</button>
@@ -714,23 +647,18 @@
         </div>
     </div>
 
-    <!-- Script sidebar (non-module) -->
+    <!-- Script non-module untuk sidebar -->
     <script>
         feather.replace();
-
-        // Sidebar
         const menuToggle = document.getElementById('menuToggle');
         const closeSidebar = document.getElementById('closeSidebar');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
-
         function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('active'); }
         function closeSidebarFunc() { sidebar.classList.remove('open'); overlay.classList.remove('active'); }
         menuToggle.addEventListener('click', openSidebar);
         closeSidebar.addEventListener('click', closeSidebarFunc);
         overlay.addEventListener('click', closeSidebarFunc);
-
-        // Toggle submenu sales
         const salesItem = document.getElementById('salesMenuItem');
         const salesToggle = document.getElementById('salesMenuToggle');
         if (salesToggle) {
@@ -739,15 +667,9 @@
                 salesItem.classList.toggle('open');
             });
         }
-
-        // Set active menu
-        document.querySelectorAll('.sidebar-menu .menu-link').forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href') === 'finance.html') link.classList.add('active');
-        });
     </script>
 
-    <!-- Script module utama (Firestore) dengan proteksi login lokal -->
+    <!-- Script Module Utama -->
     <script type="module">
         import { auth, provider, dbCloud } from './js/firebase-config.js';
         import { signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
@@ -756,7 +678,7 @@
             query, where, orderBy, serverTimestamp, Timestamp 
         } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // ========== INDEXEDDB UNTUK LOGIN LOKAL ==========
+        // ========== INDEXEDDB LOGIN LOKAL ==========
         const LOCAL_DB_NAME = 'MudaPOSDB';
         const LOCAL_DB_VERSION = 1;
         const STORE_LOCAL_USERS = 'localUsers';
@@ -766,10 +688,7 @@
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(LOCAL_DB_NAME, LOCAL_DB_VERSION);
                 request.onerror = () => reject(request.error);
-                request.onsuccess = (e) => {
-                    localDB = e.target.result;
-                    resolve();
-                };
+                request.onsuccess = (e) => { localDB = e.target.result; resolve(); };
                 request.onupgradeneeded = (e) => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains(STORE_LOCAL_USERS)) {
@@ -787,14 +706,10 @@
                     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
                     const hashArray = Array.from(new Uint8Array(hashBuffer));
                     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                } catch (e) { console.warn('Crypto digest failed, using fallback', e); }
+                } catch (e) {}
             }
             let hash = 0;
-            for (let i = 0; i < password.length; i++) {
-                const char = password.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash |= 0;
-            }
+            for (let i = 0; i < password.length; i++) { hash = ((hash << 5) - hash) + password.charCodeAt(i); }
             return hash.toString(16);
         }
 
@@ -808,18 +723,13 @@
                     const user = users.find(u => u.username === username);
                     if (!user) { resolve(null); return; }
                     const hashed = await hashLocalPassword(password);
-                    if (user.password === hashed) {
-                        const { password, ...safeUser } = user;
-                        resolve(safeUser);
-                    } else {
-                        resolve(null);
-                    }
+                    resolve(user.password === hashed ? { id: user.id, name: user.name, role: user.role } : null);
                 };
                 request.onerror = reject;
             });
         }
 
-        // Elemen DOM untuk login lokal (sekarang berada di sidebar)
+        // Elemen login
         const loginModal = document.getElementById('loginModal');
         const loginUsername = document.getElementById('loginUsername');
         const loginPassword = document.getElementById('loginPassword');
@@ -830,35 +740,28 @@
         const localUserInfo = document.getElementById('localUserInfo');
         const mainContent = document.getElementById('mainContent');
 
-        // Cek sesi lokal
         let localUser = null;
-        const savedLocalSession = sessionStorage.getItem('localUser');
-        if (savedLocalSession) {
-            localUser = JSON.parse(savedLocalSession);
+        const savedSession = sessionStorage.getItem('localUser');
+        if (savedSession) {
+            localUser = JSON.parse(savedSession);
             localUserNameSpan.textContent = localUser.name;
-            localLogoutBtn.style.display = 'inline-block';
             localUserInfo.style.display = 'flex';
             mainContent.style.display = 'block';
             loginModal.style.display = 'none';
         } else {
             mainContent.style.display = 'none';
             loginModal.style.display = 'flex';
-            localUserInfo.style.display = 'none';
         }
 
         loginSubmit.addEventListener('click', async () => {
-            const username = loginUsername.value;
-            const password = loginPassword.value;
-            const user = await verifyLocalUser(username, password);
+            const user = await verifyLocalUser(loginUsername.value, loginPassword.value);
             if (user) {
                 sessionStorage.setItem('localUser', JSON.stringify(user));
                 localUser = user;
                 localUserNameSpan.textContent = user.name;
-                localLogoutBtn.style.display = 'inline-block';
                 localUserInfo.style.display = 'flex';
                 loginModal.style.display = 'none';
                 mainContent.style.display = 'block';
-                // Muat ulang data setelah login
                 loadDashboard();
                 showTab('cash');
             } else {
@@ -869,209 +772,167 @@
         localLogoutBtn.addEventListener('click', () => {
             sessionStorage.removeItem('localUser');
             localUser = null;
-            localUserNameSpan.textContent = '';
-            localLogoutBtn.style.display = 'none';
             localUserInfo.style.display = 'none';
             mainContent.style.display = 'none';
             loginModal.style.display = 'flex';
-            loginUsername.value = '';
-            loginPassword.value = '';
+            loginUsername.value = loginPassword.value = '';
             loginError.style.display = 'none';
         });
 
-        // ========== REFERENSI KOLEKSI FIRESTORE ==========
+        // ========== FIRESTORE REFERENSI ==========
         const financeTransCol = collection(dbCloud, 'financeTransactions');
         const salesCol = collection(dbCloud, 'sales');
         const purchaseCol = collection(dbCloud, 'purchase');
         const customerCol = collection(dbCloud, 'customer');
-        const supplierCol = collection(dbCloud, 'supplier'); // asumsi ada koleksi supplier
-        const produkCol = collection(dbCloud, 'produk'); // tambahan untuk inventory
+        const supplierCol = collection(dbCloud, 'supplier');
+        const produkCol = collection(dbCloud, 'produk');
 
-        // Elemen DOM (sama seperti sebelumnya)
+        // Elemen UI
         const loginBtn = document.getElementById('loginBtn');
         const syncBtn = document.getElementById('syncBtn');
         if (syncBtn) syncBtn.style.display = 'none';
 
-        // Tab navigasi (desktop)
         const tabCash = document.getElementById('tabCash');
         const tabReceivable = document.getElementById('tabReceivable');
         const tabPayable = document.getElementById('tabPayable');
         const tabProfitLoss = document.getElementById('tabProfitLoss');
-        const panelCash = document.getElementById('panelCash');
-        const panelReceivable = document.getElementById('panelReceivable');
-        const panelPayable = document.getElementById('panelPayable');
-        const panelProfitLoss = document.getElementById('panelProfitLoss');
+        const tabTransactionProfit = document.getElementById('tabTransactionProfit');
+        const panels = {
+            cash: document.getElementById('panelCash'),
+            receivable: document.getElementById('panelReceivable'),
+            payable: document.getElementById('panelPayable'),
+            profitloss: document.getElementById('panelProfitLoss'),
+            transactionprofit: document.getElementById('panelTransactionProfit')
+        };
 
-        // Elemen dashboard
+        // Dashboard
         const cashBalanceEl = document.getElementById('cashBalance');
         const totalReceivableEl = document.getElementById('totalReceivable');
         const totalPayableEl = document.getElementById('totalPayable');
         const netProfitEl = document.getElementById('netProfit');
         const totalAssetsEl = document.getElementById('totalAssets');
 
-        // Elemen drawer mobile
+        // Drawer
         const mobileTabMenuBtn = document.getElementById('mobileTabMenuBtn');
         const tabDrawer = document.getElementById('tabDrawer');
         const drawerOverlay = document.getElementById('drawerOverlay');
         const closeDrawer = document.getElementById('closeDrawer');
         const drawerItems = document.querySelectorAll('.drawer-item');
 
-        // Fungsi ganti tab (sama untuk desktop dan mobile)
         function showTab(tab) {
-            // Update class active pada tab desktop
-            [tabCash, tabReceivable, tabPayable, tabProfitLoss].forEach(t => t.classList.remove('active'));
-            // Update class active pada drawer item
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             drawerItems.forEach(item => item.classList.remove('active'));
-
-            // Sembunyikan semua panel
-            [panelCash, panelReceivable, panelPayable, panelProfitLoss].forEach(p => p.style.display = 'none');
+            Object.values(panels).forEach(p => p.style.display = 'none');
 
             if (tab === 'cash') {
                 tabCash.classList.add('active');
                 document.querySelector('.drawer-item[data-tab="cash"]').classList.add('active');
-                panelCash.style.display = 'block';
+                panels.cash.style.display = 'block';
                 loadCashTransactions();
             } else if (tab === 'receivable') {
                 tabReceivable.classList.add('active');
                 document.querySelector('.drawer-item[data-tab="receivable"]').classList.add('active');
-                panelReceivable.style.display = 'block';
+                panels.receivable.style.display = 'block';
                 loadReceivables();
             } else if (tab === 'payable') {
                 tabPayable.classList.add('active');
                 document.querySelector('.drawer-item[data-tab="payable"]').classList.add('active');
-                panelPayable.style.display = 'block';
+                panels.payable.style.display = 'block';
                 loadPayables();
             } else if (tab === 'profitloss') {
                 tabProfitLoss.classList.add('active');
                 document.querySelector('.drawer-item[data-tab="profitloss"]').classList.add('active');
-                panelProfitLoss.style.display = 'block';
+                panels.profitloss.style.display = 'block';
                 loadProfitLoss();
+            } else if (tab === 'transactionprofit') {
+                tabTransactionProfit.classList.add('active');
+                document.querySelector('.drawer-item[data-tab="transactionprofit"]').classList.add('active');
+                panels.transactionprofit.style.display = 'block';
+                loadTransactionProfit();
             }
-
-            // Tutup drawer setelah pilih tab (untuk mobile)
             closeDrawerFunc();
         }
 
-        // Event listener tab desktop
         tabCash.addEventListener('click', () => showTab('cash'));
         tabReceivable.addEventListener('click', () => showTab('receivable'));
         tabPayable.addEventListener('click', () => showTab('payable'));
         tabProfitLoss.addEventListener('click', () => showTab('profitloss'));
+        tabTransactionProfit.addEventListener('click', () => showTab('transactionprofit'));
 
-        // Fungsi buka/tutup drawer
-        function openDrawer() {
-            tabDrawer.classList.add('open');
-            drawerOverlay.classList.add('active');
-        }
-        function closeDrawerFunc() {
-            tabDrawer.classList.remove('open');
-            drawerOverlay.classList.remove('active');
-        }
-
+        function openDrawer() { tabDrawer.classList.add('open'); drawerOverlay.classList.add('active'); }
+        function closeDrawerFunc() { tabDrawer.classList.remove('open'); drawerOverlay.classList.remove('active'); }
         mobileTabMenuBtn.addEventListener('click', openDrawer);
         closeDrawer.addEventListener('click', closeDrawerFunc);
         drawerOverlay.addEventListener('click', closeDrawerFunc);
-
-        // Event listener drawer items
         drawerItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const tab = item.dataset.tab;
-                showTab(tab);
-            });
+            item.addEventListener('click', () => showTab(item.dataset.tab));
         });
 
-        // ========== DASHBOARD CARDS ==========
+        // Format Rupiah
+        function formatRupiah(angka) { return 'Rp ' + (angka || 0).toLocaleString('id-ID'); }
+
+        // ========== DASHBOARD ==========
         async function loadDashboard() {
             try {
-                // Hitung kas dari financeTransactions
+                // Kas
                 const transSnap = await getDocs(financeTransCol);
                 let cash = 0;
                 transSnap.forEach(doc => {
                     const t = doc.data();
-                    if (t.type === 'income') cash += t.amount;
-                    else if (t.type === 'expense') cash -= t.amount;
+                    cash += t.type === 'income' ? t.amount : -t.amount;
                 });
-                cashBalanceEl.innerText = 'Rp ' + cash.toLocaleString();
+                cashBalanceEl.innerText = formatRupiah(cash);
 
-                // Piutang dari sales yang belum lunas (outstanding > 0)
+                // Piutang
                 const salesSnap = await getDocs(query(salesCol, where('outstanding', '>', 0)));
                 let totalPiutang = 0;
-                salesSnap.forEach(doc => {
-                    totalPiutang += doc.data().outstanding || 0;
-                });
-                totalReceivableEl.innerText = 'Rp ' + totalPiutang.toLocaleString();
+                salesSnap.forEach(doc => totalPiutang += doc.data().outstanding || 0);
+                totalReceivableEl.innerText = formatRupiah(totalPiutang);
 
-                // Hutang dari purchase yang belum lunas (outstanding > 0)
-                const purchaseSnap = await getDocs(query(purchaseCol, where('outstanding', '>', 0)));
+                // Hutang
                 let totalHutang = 0;
-                purchaseSnap.forEach(doc => {
-                    totalHutang += doc.data().outstanding || 0;
-                });
-                totalPayableEl.innerText = 'Rp ' + totalHutang.toLocaleString();
-
-                // Hitung total nilai inventory (stok * harga dasar)
-                let totalInventoryValue = 0;
                 try {
-                    const produkSnap = await getDocs(query(produkCol, where('deleted', '==', false)));
-                    produkSnap.forEach(doc => {
-                        const p = doc.data();
-                        const stok = p.stokAwal || 0;
-                        const hargaDasar = p.hargaDasar || 0;
-                        totalInventoryValue += stok * hargaDasar;
-                    });
-                } catch (error) {
-                    console.error('Error menghitung inventory:', error);
-                }
+                    const purchaseSnap = await getDocs(query(purchaseCol, where('outstanding', '>', 0)));
+                    purchaseSnap.forEach(doc => totalHutang += doc.data().outstanding || 0);
+                } catch (e) {}
+                totalPayableEl.innerText = formatRupiah(totalHutang);
 
-                // Total Aset = Kas + Piutang + Nilai Inventory
-                const totalAssets = cash + totalPiutang + totalInventoryValue;
-                totalAssetsEl.innerText = 'Rp ' + totalAssets.toLocaleString();
-
-                // Laba bersih bulan ini
-                const now = new Date();
-                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-                
-                // Total penjualan bulan ini (dari sales)
-                const salesMonthSnap = await getDocs(query(salesCol, 
-                    where('createdAt', '>=', Timestamp.fromDate(startOfMonth)),
-                    where('createdAt', '<=', Timestamp.fromDate(endOfMonth))
-                ));
-                let totalSales = 0;
-                let totalHPP = 0;
-                salesMonthSnap.forEach(doc => {
-                    const sale = doc.data();
-                    totalSales += sale.total || 0;
-                    // Jika sale memiliki field totalPokok, gunakan itu
-                    if (sale.totalPokok) {
-                        totalHPP += sale.totalPokok;
-                    } else if (sale.items && Array.isArray(sale.items)) {
-                        // Fallback: jumlah subtotalPokok dari items
-                        sale.items.forEach(item => {
-                            totalHPP += item.subtotalPokok || 0;
-                        });
-                    } else {
-                        // Fallback lama (estimasi 70%)
-                        totalHPP += (sale.total || 0) * 0.7;
-                    }
+                // Nilai Inventaris
+                let inventoryValue = 0;
+                const produkSnap = await getDocs(query(produkCol, where('deleted', '==', false)));
+                produkSnap.forEach(doc => {
+                    const p = doc.data();
+                    inventoryValue += (p.stokAwal || 0) * (p.hargaDasar || 0);
                 });
 
-                const grossProfit = totalSales - totalHPP;
+                // Total Aset = Kas + Piutang + Inventaris
+                totalAssetsEl.innerText = formatRupiah(cash + totalPiutang + inventoryValue);
 
-                // Pengeluaran bulan ini dari financeTransactions
-                const expenseMonthSnap = await getDocs(query(financeTransCol,
+                // Laba Bersih Bulan Ini
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+                const monthSales = await getDocs(query(salesCol,
+                    where('createdAt', '>=', Timestamp.fromDate(start)),
+                    where('createdAt', '<=', Timestamp.fromDate(end))
+                ));
+                let totalSales = 0, totalHPP = 0;
+                monthSales.forEach(doc => {
+                    const s = doc.data();
+                    totalSales += s.finalTotal || s.total || 0;
+                    totalHPP += s.totalPokok || 0;
+                });
+                const monthExpense = await getDocs(query(financeTransCol,
                     where('type', '==', 'expense'),
-                    where('date', '>=', Timestamp.fromDate(startOfMonth)),
-                    where('date', '<=', Timestamp.fromDate(endOfMonth))
+                    where('date', '>=', Timestamp.fromDate(start)),
+                    where('date', '<=', Timestamp.fromDate(end))
                 ));
                 let totalExpense = 0;
-                expenseMonthSnap.forEach(doc => totalExpense += doc.data().amount);
-
-                const netProfit = grossProfit - totalExpense;
-                netProfitEl.innerText = 'Rp ' + netProfit.toLocaleString();
-
+                monthExpense.forEach(doc => totalExpense += doc.data().amount);
+                const net = totalSales - totalHPP - totalExpense;
+                netProfitEl.innerText = formatRupiah(net);
             } catch (error) {
-                console.error('Error loading dashboard:', error);
+                console.error('Dashboard error:', error);
             }
         }
 
@@ -1088,192 +949,36 @@
                         const t = doc.data();
                         const date = t.date?.toDate?.() ? t.date.toDate().toLocaleDateString('id-ID') : '-';
                         return `<tr>
-                            <td>${date}</td>
-                            <td>${t.description || '-'}</td>
-                            <td>${t.category || '-'}</td>
-                            <td>${t.type === 'income' ? 'Rp ' + t.amount.toLocaleString() : '-'}</td>
-                            <td>${t.type === 'expense' ? 'Rp ' + t.amount.toLocaleString() : '-'}</td>
+                            <td>${date}</td><td>${t.description || '-'}</td><td>${t.category || '-'}</td>
+                            <td>${t.type === 'income' ? formatRupiah(t.amount) : '-'}</td>
+                            <td>${t.type === 'expense' ? formatRupiah(t.amount) : '-'}</td>
                             <td>${t.method || '-'}</td>
-                            <td>
-                                <button class="btn-icon" onclick="editCash('${doc.id}')"><i data-feather="edit-2"></i></button>
-                                <button class="btn-icon delete" onclick="deleteCash('${doc.id}')"><i data-feather="trash-2"></i></button>
-                            </td>
+                            <td><button class="btn-icon" onclick="window.deleteCash('${doc.id}')"><i data-feather="trash-2"></i></button></td>
                         </tr>`;
                     }).join('');
                     feather.replace();
                 }
             } catch (error) {
-                console.error(error);
                 tbody.innerHTML = `<tr><td colspan="7" style="color:red;">Gagal memuat: ${error.message}</td></tr>`;
             }
         }
 
-        // ========== PIUTANG ==========
-        async function loadReceivables() {
-            const tbody = document.getElementById('receivableBody');
-            try {
-                const salesSnap = await getDocs(query(salesCol, where('outstanding', '>', 0)));
-                if (salesSnap.empty) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada piutang</td></tr>';
-                } else {
-                    // Group by customer
-                    const piutangMap = new Map();
-                    for (const doc of salesSnap.docs) {
-                        const s = doc.data();
-                        const custId = s.customerId;
-                        if (!custId) continue;
-                        const custSnap = await getDoc(doc(customerCol, custId));
-                        const custName = custSnap.exists() ? custSnap.data().nama : 'Unknown';
-                        const key = custId;
-                        if (!piutangMap.has(key)) {
-                            piutangMap.set(key, { customerName: custName, total: 0, dueDate: null, salesIds: [] });
-                        }
-                        const item = piutangMap.get(key);
-                        item.total += s.outstanding || 0;
-                        // Asumsikan due date dari sales
-                        if (s.dueDate) item.dueDate = s.dueDate.toDate?.() || null;
-                        item.salesIds.push(doc.id);
-                    }
+        window.deleteCash = async (id) => {
+            if (!confirm('Hapus transaksi ini?')) return;
+            await deleteDoc(doc(financeTransCol, id));
+            loadCashTransactions();
+            loadDashboard();
+        };
 
-                    tbody.innerHTML = Array.from(piutangMap.entries()).map(([custId, data]) => {
-                        const due = data.dueDate ? data.dueDate.toLocaleDateString('id-ID') : '-';
-                        return `<tr>
-                            <td>${data.customerName}</td>
-                            <td>Rp ${data.total.toLocaleString()}</td>
-                            <td>${due}</td>
-                            <td><span class="badge-warning">Belum Lunas</span></td>
-                            <td>
-                                <button class="btn-icon" onclick="showReceivableDetail('${custId}')"><i data-feather="eye"></i></button>
-                            </td>
-                        </tr>`;
-                    }).join('');
-                    feather.replace();
-                }
-            } catch (error) {
-                console.error(error);
-                tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Gagal memuat: ${error.message}</td></tr>`;
-            }
-        }
-
-        // ========== HUTANG ==========
-        async function loadPayables() {
-            const tbody = document.getElementById('payableBody');
-            try {
-                const purchaseSnap = await getDocs(query(purchaseCol, where('outstanding', '>', 0)));
-                if (purchaseSnap.empty) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada hutang</td></tr>';
-                } else {
-                    // Group by supplier
-                    const hutangMap = new Map();
-                    for (const doc of purchaseSnap.docs) {
-                        const p = doc.data();
-                        const suppId = p.supplierId;
-                        if (!suppId) continue;
-                        const suppSnap = await getDoc(doc(supplierCol, suppId));
-                        const suppName = suppSnap.exists() ? suppSnap.data().nama : 'Unknown';
-                        const key = suppId;
-                        if (!hutangMap.has(key)) {
-                            hutangMap.set(key, { supplierName: suppName, total: 0, dueDate: null, purchaseIds: [] });
-                        }
-                        const item = hutangMap.get(key);
-                        item.total += p.outstanding || 0;
-                        if (p.dueDate) item.dueDate = p.dueDate.toDate?.() || null;
-                        item.purchaseIds.push(doc.id);
-                    }
-
-                    tbody.innerHTML = Array.from(hutangMap.entries()).map(([suppId, data]) => {
-                        const due = data.dueDate ? data.dueDate.toLocaleDateString('id-ID') : '-';
-                        return `<tr>
-                            <td>${data.supplierName}</td>
-                            <td>Rp ${data.total.toLocaleString()}</td>
-                            <td>${due}</td>
-                            <td><span class="badge-warning">Belum Lunas</span></td>
-                            <td>
-                                <button class="btn-icon" onclick="showPayableDetail('${suppId}')"><i data-feather="eye"></i></button>
-                            </td>
-                        </tr>`;
-                    }).join('');
-                    feather.replace();
-                }
-            } catch (error) {
-                console.error(error);
-                tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Gagal memuat: ${error.message}</td></tr>`;
-            }
-        }
-
-        // ========== LABA RUGI ==========
-        async function loadProfitLoss() {
-            const startDate = document.getElementById('startDatePL').value;
-            const endDate = document.getElementById('endDatePL').value;
-            // Jika tidak diisi, gunakan bulan ini
-            let start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-            let end = endDate ? new Date(endDate) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59);
-            if (!startDate) document.getElementById('startDatePL').valueAsDate = start;
-            if (!endDate) document.getElementById('endDatePL').valueAsDate = end;
-
-            try {
-                // Total penjualan
-                const salesSnap = await getDocs(query(salesCol,
-                    where('createdAt', '>=', Timestamp.fromDate(start)),
-                    where('createdAt', '<=', Timestamp.fromDate(end))
-                ));
-                let totalSales = 0;
-                let totalHPP = 0;
-                salesSnap.forEach(doc => {
-                    const sale = doc.data();
-                    totalSales += sale.total || 0;
-                    // Prioritas: field totalPokok
-                    if (sale.totalPokok) {
-                        totalHPP += sale.totalPokok;
-                    } else if (sale.items && Array.isArray(sale.items)) {
-                        // Jumlah subtotalPokok dari items
-                        sale.items.forEach(item => {
-                            totalHPP += item.subtotalPokok || 0;
-                        });
-                    } else {
-                        // Fallback untuk data lama (estimasi 70%)
-                        totalHPP += (sale.total || 0) * 0.7;
-                    }
-                });
-
-                document.getElementById('totalSales').innerText = 'Rp ' + totalSales.toLocaleString();
-                document.getElementById('totalHPP').innerText = 'Rp ' + totalHPP.toLocaleString();
-
-                const grossProfit = totalSales - totalHPP;
-                document.getElementById('grossProfit').innerText = 'Rp ' + grossProfit.toLocaleString();
-
-                // Total pengeluaran
-                const expenseSnap = await getDocs(query(financeTransCol,
-                    where('type', '==', 'expense'),
-                    where('date', '>=', Timestamp.fromDate(start)),
-                    where('date', '<=', Timestamp.fromDate(end))
-                ));
-                let totalExpense = 0;
-                expenseSnap.forEach(doc => totalExpense += doc.data().amount);
-                document.getElementById('totalExpense').innerText = 'Rp ' + totalExpense.toLocaleString();
-
-                const netProfit = grossProfit - totalExpense;
-                document.getElementById('netProfitDetail').innerText = 'Rp ' + netProfit.toLocaleString();
-
-            } catch (error) {
-                console.error('Error load profit loss:', error);
-                alert('Gagal memuat laba rugi: ' + error.message);
-            }
-        }
-
-        // ========== MODAL TAMBAH TRANSAKSI KAS ==========
-        const modalCash = document.getElementById('modalCash');
-        const closeModalCash = document.getElementById('closeModalCash');
-        const formCash = document.getElementById('formCash');
-
+        // Modal Tambah Kas
         document.getElementById('addCashBtn').addEventListener('click', () => {
             document.getElementById('cashDate').valueAsDate = new Date();
-            modalCash.classList.add('active');
+            document.getElementById('modalCash').classList.add('active');
         });
-
-        closeModalCash.addEventListener('click', () => modalCash.classList.remove('active'));
-
-        formCash.addEventListener('submit', async (e) => {
+        document.getElementById('closeModalCash').addEventListener('click', () => {
+            document.getElementById('modalCash').classList.remove('active');
+        });
+        document.getElementById('formCash').addEventListener('submit', async (e) => {
             e.preventDefault();
             const data = {
                 date: Timestamp.fromDate(new Date(document.getElementById('cashDate').value)),
@@ -1285,63 +990,171 @@
                 reference: document.getElementById('cashRef').value,
                 createdAt: serverTimestamp()
             };
-            try {
-                await addDoc(financeTransCol, data);
-                alert('Transaksi berhasil ditambahkan');
-                modalCash.classList.remove('active');
-                formCash.reset();
-                loadCashTransactions();
-                loadDashboard();
-            } catch (error) {
-                alert('Gagal: ' + error.message);
-            }
+            await addDoc(financeTransCol, data);
+            alert('Transaksi ditambahkan');
+            document.getElementById('modalCash').classList.remove('active');
+            document.getElementById('formCash').reset();
+            loadCashTransactions();
+            loadDashboard();
         });
 
-        // ========== FUNGSI GLOBAL UNTUK EDIT/HAPUS ==========
-        window.editCash = async (id) => {
-            alert('Fitur edit belum diimplementasikan');
-        };
-        window.deleteCash = async (id) => {
-            if (!confirm('Yakin hapus transaksi ini?')) return;
-            try {
-                await deleteDoc(doc(financeTransCol, id));
-                loadCashTransactions();
-                loadDashboard();
-            } catch (error) {
-                alert('Gagal hapus: ' + error.message);
-            }
-        };
-
-        window.showReceivableDetail = async (custId) => {
-            alert('Detail piutang untuk customer ' + custId);
-        };
-        window.showPayableDetail = async (suppId) => {
-            alert('Detail hutang untuk supplier ' + suppId);
-        };
-
-        // ========== FILTER ==========
         document.getElementById('filterCashBtn').addEventListener('click', loadCashTransactions);
+
+        // ========== PIUTANG ==========
+        async function loadReceivables() {
+            const tbody = document.getElementById('receivableBody');
+            try {
+                const salesSnap = await getDocs(query(salesCol, where('outstanding', '>', 0)));
+                if (salesSnap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada piutang</td></tr>';
+                    return;
+                }
+                const map = new Map();
+                for (const doc of salesSnap.docs) {
+                    const s = doc.data();
+                    if (!s.customerId) continue;
+                    const custSnap = await getDoc(doc(customerCol, s.customerId));
+                    const custName = custSnap.exists() ? custSnap.data().nama : 'Unknown';
+                    const key = s.customerId;
+                    if (!map.has(key)) map.set(key, { name: custName, total: 0 });
+                    map.get(key).total += s.outstanding;
+                }
+                tbody.innerHTML = Array.from(map.entries()).map(([id, data]) => `
+                    <tr><td>${data.name}</td><td>${formatRupiah(data.total)}</td><td>-</td>
+                    <td><span class="badge-warning">Belum Lunas</span></td>
+                    <td><button class="btn-icon" onclick="alert('Detail piutang')"><i data-feather="eye"></i></button></td></tr>
+                `).join('');
+                feather.replace();
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="5">Error: ${error.message}</td></tr>`;
+            }
+        }
+
+        // ========== HUTANG ==========
+        async function loadPayables() {
+            const tbody = document.getElementById('payableBody');
+            try {
+                const purchaseSnap = await getDocs(query(purchaseCol, where('outstanding', '>', 0)));
+                if (purchaseSnap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada hutang</td></tr>';
+                    return;
+                }
+                const map = new Map();
+                for (const doc of purchaseSnap.docs) {
+                    const p = doc.data();
+                    if (!p.supplierId) continue;
+                    let suppName = 'Unknown';
+                    try {
+                        const suppSnap = await getDoc(doc(supplierCol, p.supplierId));
+                        if (suppSnap.exists()) suppName = suppSnap.data().nama;
+                    } catch (e) {}
+                    const key = p.supplierId;
+                    if (!map.has(key)) map.set(key, { name: suppName, total: 0 });
+                    map.get(key).total += p.outstanding;
+                }
+                tbody.innerHTML = Array.from(map.entries()).map(([id, data]) => `
+                    <tr><td>${data.name}</td><td>${formatRupiah(data.total)}</td><td>-</td>
+                    <td><span class="badge-warning">Belum Lunas</span></td>
+                    <td><button class="btn-icon" onclick="alert('Detail hutang')"><i data-feather="eye"></i></button></td></tr>
+                `).join('');
+                feather.replace();
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="5">Error: ${error.message}</td></tr>`;
+            }
+        }
+
+        // ========== LABA RUGI ==========
+        async function loadProfitLoss() {
+            const start = document.getElementById('startDatePL').valueAsDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const end = document.getElementById('endDatePL').valueAsDate || new Date();
+            end.setHours(23,59,59,999);
+            document.getElementById('startDatePL').valueAsDate = start;
+            document.getElementById('endDatePL').valueAsDate = end;
+
+            try {
+                const salesSnap = await getDocs(query(salesCol,
+                    where('createdAt', '>=', Timestamp.fromDate(start)),
+                    where('createdAt', '<=', Timestamp.fromDate(end))
+                ));
+                let totalSales = 0, totalHPP = 0;
+                salesSnap.forEach(doc => {
+                    const s = doc.data();
+                    totalSales += s.finalTotal || s.total || 0;
+                    totalHPP += s.totalPokok || 0;
+                });
+                document.getElementById('totalSales').innerText = formatRupiah(totalSales);
+                document.getElementById('totalHPP').innerText = formatRupiah(totalHPP);
+                const gross = totalSales - totalHPP;
+                document.getElementById('grossProfit').innerText = formatRupiah(gross);
+
+                const expenseSnap = await getDocs(query(financeTransCol,
+                    where('type', '==', 'expense'),
+                    where('date', '>=', Timestamp.fromDate(start)),
+                    where('date', '<=', Timestamp.fromDate(end))
+                ));
+                let totalExpense = 0;
+                expenseSnap.forEach(doc => totalExpense += doc.data().amount);
+                document.getElementById('totalExpense').innerText = formatRupiah(totalExpense);
+                document.getElementById('netProfitDetail').innerText = formatRupiah(gross - totalExpense);
+            } catch (error) {
+                alert('Gagal memuat laba rugi: ' + error.message);
+            }
+        }
+
         document.getElementById('filterPLBtn').addEventListener('click', loadProfitLoss);
 
-        // ========== AUTH ==========
+        // ========== LABA TRANSAKSI ==========
+        async function loadTransactionProfit() {
+            const start = document.getElementById('startDateTP').valueAsDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const end = document.getElementById('endDateTP').valueAsDate || new Date();
+            end.setHours(23,59,59,999);
+            document.getElementById('startDateTP').valueAsDate = start;
+            document.getElementById('endDateTP').valueAsDate = end;
+
+            const tbody = document.getElementById('transactionProfitBody');
+            try {
+                const q = query(salesCol,
+                    where('createdAt', '>=', Timestamp.fromDate(start)),
+                    where('createdAt', '<=', Timestamp.fromDate(end)),
+                    orderBy('createdAt', 'desc')
+                );
+                const snap = await getDocs(q);
+                if (snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Tidak ada data</td></tr>';
+                    return;
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const s = doc.data();
+                    const date = s.createdAt?.toDate().toLocaleDateString('id-ID') || '-';
+                    const total = s.finalTotal || s.total || 0;
+                    const hpp = s.totalPokok || 0;
+                    const profit = total - hpp;
+                    const methods = (s.paymentMethods || []).map(p => p.method).join(', ') || '-';
+                    const status = (s.outstanding > 0) ? '<span class="badge-warning">Piutang</span>' : '<span class="badge-success">Lunas</span>';
+                    const noTrans = s.transactionNumber || doc.id.slice(-6);
+                    html += `<tr><td>${date}</td><td>${noTrans}</td><td>${formatRupiah(total)}</td><td>${formatRupiah(hpp)}</td><td>${formatRupiah(profit)}</td><td>${methods}</td><td>${status}</td></tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="7">Error: ${error.message}</td></tr>`;
+            }
+        }
+
+        document.getElementById('filterTPBtn').addEventListener('click', loadTransactionProfit);
+
+        // Auth Firebase
         onAuthStateChanged(auth, (user) => {
-            loginBtn.innerHTML = user ? '<i data-feather="log-out" width="18"></i><span>Logout</span>' : '<i data-feather="log-in" width="18"></i><span>Login</span>';
+            loginBtn.innerHTML = user ? '<i data-feather="log-out"></i><span>Logout</span>' : '<i data-feather="log-in"></i><span>Login</span>';
             feather.replace();
         });
         loginBtn.addEventListener('click', async () => {
-            const user = auth.currentUser;
-            if (user) {
-                try { await signOut(auth); } catch (error) { alert('Gagal logout: ' + error.message); }
-            } else {
-                try { await signInWithPopup(auth, provider); } catch (error) { alert('Gagal login: ' + error.message); }
-            }
+            if (auth.currentUser) await signOut(auth);
+            else await signInWithPopup(auth, provider);
         });
 
-        // ========== INIT ==========
-        // Inisialisasi IndexedDB lokal
+        // Inisialisasi
         await initLocalDB();
-
-        // Jika sudah login lokal, jalankan load data
         if (localUser) {
             loadDashboard();
             showTab('cash');
