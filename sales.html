@@ -1634,7 +1634,7 @@
         import { signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { 
             collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc,
-            query, where, orderBy, serverTimestamp, runTransaction, writeBatch 
+            query, where, orderBy, serverTimestamp, writeBatch, Timestamp 
         } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         console.log('Sales page dimulai...');
@@ -1652,6 +1652,7 @@
         const paketCol = collection(dbCloud, 'productPackages');
         const promoCol = collection(dbCloud, 'promos');
         const voucherCol = collection(dbCloud, 'vouchers');
+        const financeTransCol = collection(dbCloud, 'financeTransactions'); // <-- Tambahan
 
         // ========== REFERENSI DOKUMEN SETTINGS ==========
         const settingsDocRef = doc(dbCloud, 'settings', 'appSettings');
@@ -2448,32 +2449,51 @@
             if (hargaQtyBreak !== null && hargaQtyBreak < hargaTerbaik) hargaTerbaik = hargaQtyBreak;
             if (hargaTerbaik < totalHargaNormal) {
                 const faktor = hargaTerbaik / totalHargaNormal;
-                for (let item of items) { item.hargaSatuan = item.hargaNormal * faktor; item.subtotal = item.hargaSatuan * item.qty; }
+                for (let item of items) { 
+                    item.hargaSatuan = item.hargaNormal * faktor; 
+                    item.subtotal = item.hargaSatuan * item.qty;
+                    // subtotal pokok tetap (tidak terpengaruh diskon harga jual)
+                    item.subtotalPokok = (item.hargaPokok || 0) * item.qty;
+                }
             } else {
-                for (let item of items) { item.hargaSatuan = item.hargaNormal; item.subtotal = item.hargaNormal * item.qty; }
+                for (let item of items) { 
+                    item.hargaSatuan = item.hargaNormal; 
+                    item.subtotal = item.hargaNormal * item.qty;
+                    item.subtotalPokok = (item.hargaPokok || 0) * item.qty;
+                }
             }
         }
 
-        // ========== FUNGSI CART ==========
+        // ========== FUNGSI CART (DIPERBAIKI DENGAN HARGA POKOK) ==========
         async function tambahKeCart(produkId, qty, konversiId = null, varianId = null) {
             const produk = allProducts.find(p => p.id === produkId);
             if (!produk) return;
-            let konversi = null, varian = null, nilaiKonversi = 1, hargaNormal = produk.hargaJual, stokTersedia = produk.stokAwal;
+            let konversi = null, varian = null, nilaiKonversi = 1;
+            let hargaNormal = produk.hargaJual;
+            let hargaPokok = produk.hargaDasar || 0;  // <-- ambil harga pokok produk
+            let stokTersedia = produk.stokAwal;
+
             if (varianId) {
                 varian = allVariants.find(v => v.id === varianId && v.produkId === produkId);
                 if (!varian) { alert('Varian tidak ditemukan'); return; }
                 hargaNormal = varian.hargaJual || produk.hargaJual;
+                hargaPokok = varian.hargaPokok ?? produk.hargaDasar ?? 0;  // <-- harga pokok varian
                 stokTersedia = varian.stok || 0;
             } else if (konversiId) {
                 konversi = allKonversi.find(k => k.id === konversiId && k.produkId === produkId);
                 if (!konversi) { alert('Konversi tidak ditemukan'); return; }
                 nilaiKonversi = konversi.nilai;
                 hargaNormal = konversi.hargaJual || (produk.hargaJual * nilaiKonversi);
+                hargaPokok = konversi.hargaPokok ?? (produk.hargaDasar * nilaiKonversi);  // <-- harga pokok konversi
             }
+
             const qtyDasar = varian ? qty : qty * nilaiKonversi;
             if (qtyDasar <= 0) { alert('Qty harus lebih dari 0'); return; }
             if (varian && stokTersedia < qtyDasar) { alert(`Stok varian tidak mencukupi. Stok: ${stokTersedia}`); return; }
-            const existingIndex = cartItems.findIndex(item => item.produkId === produkId && item.konversiId === konversiId && item.varianId === varianId);
+
+            const existingIndex = cartItems.findIndex(item => 
+                item.produkId === produkId && item.konversiId === konversiId && item.varianId === varianId
+            );
             if (existingIndex >= 0) {
                 cartItems[existingIndex].qty += qty;
                 cartItems[existingIndex].qtyDasar += qtyDasar;
@@ -2483,14 +2503,20 @@
                     produkId: produk.id, varianId: varianId, konversiId: konversiId,
                     nama: varian ? `${produk.nama} - ${varian.namaVarian}` : produk.nama,
                     unit: unit ? unit.nama : '', qty: qty, qtyDasar: qtyDasar,
-                    hargaNormal: hargaNormal, hargaSatuan: hargaNormal, subtotal: hargaNormal * qty, nilaiKonversi: nilaiKonversi,
+                    hargaNormal: hargaNormal,
+                    hargaSatuan: hargaNormal,
+                    subtotal: hargaNormal * qty,
+                    hargaPokok: hargaPokok,                    // <-- tambahan
+                    subtotalPokok: hargaPokok * qty,            // <-- tambahan
+                    nilaiKonversi: nilaiKonversi,
                 });
             }
-            window.cartItems = cartItems; // Update global reference
+            window.cartItems = cartItems;
             updateHargaProduk(produkId);
             updateCartBadge();
             alert(`Produk ${produk.nama} ditambahkan ke cart`);
         }
+
         function updateQtyCart(index, newQty) {
             const item = cartItems[index];
             if (!item) return false;
@@ -2508,14 +2534,17 @@
                 if (produk.stokAwal < totalQtyDasar) { alert(`Stok tidak mencukupi. Stok tersedia: ${produk.stokAwal}`); return false; }
                 item.qty = newQty; item.qtyDasar = newQtyDasar;
             }
+            item.subtotalPokok = (item.hargaPokok || 0) * item.qty;
             updateHargaProduk(item.produkId);
             window.cartItems = cartItems;
             return true;
         }
+
         function updateCartBadge() {
             const totalQty = cartItems.reduce((sum, item) => sum + item.qty, 0);
             document.getElementById('cartBadge').textContent = totalQty;
         }
+
         function renderCartModal() {
             if (!cartItemsBody) return;
             if (cartItems.length === 0) { cartItemsBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Keranjang kosong</td></tr>'; cartTotal.textContent = '0'; return; }
@@ -2732,17 +2761,30 @@
                 const totalQty = bundleSelectedItems.reduce((sum, item) => sum + item.qty, 0);
                 if (totalQty < selectedPromo.minimalQty) { alert(`Jumlah item (${totalQty}) kurang dari minimal (${selectedPromo.minimalQty})`); return; }
                 const itemDetails = window.bundleItemDetails || [];
+                // Hitung total harga pokok untuk bundle
+                let bundleTotalPokok = 0;
+                const childItems = [];
                 for (let item of bundleSelectedItems) {
                     if (item.qty === 0) continue;
                     const detail = itemDetails.find(d => d.produkId === item.produkId && d.varianId === item.varianId);
                     if (!detail) { alert(`Detail produk tidak ditemukan`); return; }
                     if (detail.stok < item.qty) { alert(`Stok ${detail.nama} tidak mencukupi. Stok: ${detail.stok}`); return; }
+                    const produk = allProducts.find(p => p.id === item.produkId);
+                    const varian = item.varianId ? allVariants.find(v => v.id === item.varianId) : null;
+                    const hargaPokok = varian ? (varian.hargaPokok ?? produk.hargaDasar ?? 0) : (produk.hargaDasar ?? 0);
+                    const subtotalPokok = hargaPokok * item.qty;
+                    bundleTotalPokok += subtotalPokok;
+                    childItems.push({ 
+                        produkId: item.produkId, varianId: item.varianId, qty: item.qty, nama: detail.nama, hargaNormal: detail.hargaJual,
+                        hargaPokok: hargaPokok, subtotalPokok: subtotalPokok
+                    });
                 }
-                const childItems = bundleSelectedItems.filter(item => item.qty > 0).map(item => {
-                    const detail = itemDetails.find(d => d.produkId === item.produkId && d.varianId === item.varianId);
-                    return { produkId: item.produkId, varianId: item.varianId, qty: item.qty, nama: detail.nama, hargaNormal: detail.hargaJual };
+                cartItems.push({ 
+                    type: 'bundle', promoId: selectedPromo.id, nama: selectedPromo.nama, 
+                    hargaSatuan: selectedPromo.harga, qty: 1, subtotal: selectedPromo.harga,
+                    childItems: childItems,
+                    subtotalPokok: bundleTotalPokok   // <-- tambahan
                 });
-                cartItems.push({ type: 'bundle', promoId: selectedPromo.id, nama: selectedPromo.nama, hargaSatuan: selectedPromo.harga, qty: 1, subtotal: selectedPromo.harga, childItems: childItems });
                 window.cartItems = cartItems;
                 updateCartBadge(); renderCartModal(); modalBundle.classList.remove('active'); alert('Promo bundle ditambahkan ke keranjang');
             } catch (error) { console.error('Error addBundleToCart:', error); alert('Terjadi kesalahan: ' + error.message); }
@@ -2977,16 +3019,12 @@
         });
         window.addEventListener('click', (e) => { if (e.target === modalVoucherList) modalVoucherList.classList.remove('active'); if (e.target === modalCreateVoucher) modalCreateVoucher.classList.remove('active'); });
 
-        // ========== FUNGSI PEMBAYARAN ==========
+        // ========== FUNGSI PEMBAYARAN (DIPERBAIKI) ==========
         let pendingPayments = []; let pendingTotalPaid = 0;
         function closeConfirmPiutangModal() { confirmPiutangModal.classList.remove('active'); setPaymentInputsDisabled(false); pendingPayments = []; pendingTotalPaid = 0; }
         closeConfirmPiutang.addEventListener('click', closeConfirmPiutangModal);
         prosesPembayaranBtn.addEventListener('click', async () => {
-            if (cartItems.length === 0) {
-                alert('Keranjang kosong');
-                return;
-            }
-        
+            if (cartItems.length === 0) { alert('Keranjang kosong'); return; }
             const finalTotal = currentTotalAfterDiscount;
             const cash = parseFloat(paymentCash.value) || 0;
             const card = parseFloat(paymentCard.value) || 0;
@@ -2994,19 +3032,13 @@
             const ewallet = parseFloat(paymentEwallet.value) || 0;
             const paidTotal = cash + card + transfer + ewallet;
             const shortage = finalTotal - paidTotal;
-        
-            // Buat array metode pembayaran dari input yang diisi
             const paymentMethods = [];
             if (cash > 0) paymentMethods.push({ method: 'cash', amount: cash });
             if (card > 0) paymentMethods.push({ method: 'card', amount: card });
             if (transfer > 0) paymentMethods.push({ method: 'transfer', amount: transfer });
             if (ewallet > 0) paymentMethods.push({ method: 'ewallet', amount: ewallet });
-        
             if (shortage > 0) {
-                if (!selectedCustomer) {
-                    alert('Untuk mencatat piutang, harus pilih pelanggan terlebih dahulu');
-                    return;
-                }
+                if (!selectedCustomer) { alert('Untuk mencatat piutang, harus pilih pelanggan terlebih dahulu'); return; }
                 pendingPayments = paymentMethods;
                 pendingTotalPaid = paidTotal;
                 setPaymentInputsDisabled(true);
@@ -3014,7 +3046,6 @@
                 confirmPiutangModal.classList.add('active');
                 return;
             }
-        
             await executePayment(paidTotal, 0, paymentMethods);
             handlePostPayment();
         });
@@ -3027,122 +3058,152 @@
             handlePostPayment();
         }
         confirmPiutangBtn.addEventListener('click', processPaymentWithPiutang);
+
         async function executePayment(paidTotal, outstandingAdded, paymentMethods = []) {
             try {
-                await runTransaction(dbCloud, async (transaction) => {
-                    const produkRefs = [];
-                    const produkItems = [];
-                    const varianRefs = [];
-                    const varianItems = [];
-        
+                const batch = writeBatch(dbCloud);
+                const produkRefs = [];
+                const produkItems = [];
+                const varianRefs = [];
+                const varianItems = [];
+
+                // Kumpulkan semua item untuk validasi stok (termasuk child bundle)
+                for (let item of cartItems) {
+                    if (item.type === 'bundle') {
+                        for (let child of item.childItems) {
+                            if (child.varianId) {
+                                varianRefs.push(doc(varianCol, child.varianId));
+                                varianItems.push(child);
+                            } else {
+                                produkRefs.push(doc(produkCol, child.produkId));
+                                produkItems.push({ produkId: child.produkId, qtyDasar: child.qty, nama: child.nama });
+                            }
+                        }
+                    } else if (item.produkId === 'piutang') {
+                        continue;
+                    } else if (item.varianId) {
+                        varianRefs.push(doc(varianCol, item.varianId));
+                        varianItems.push(item);
+                    } else {
+                        produkRefs.push(doc(produkCol, item.produkId));
+                        produkItems.push(item);
+                    }
+                }
+
+                // Validasi stok
+                const produkSnaps = await Promise.all(produkRefs.map(ref => getDoc(ref)));
+                for (let i = 0; i < produkItems.length; i++) {
+                    if (!produkSnaps[i].exists()) throw new Error(`Produk ${produkItems[i].nama} tidak ditemukan`);
+                    const produk = produkSnaps[i].data();
+                    if (produk.stokAwal < produkItems[i].qtyDasar) {
+                        throw new Error(`Stok ${produkItems[i].nama} tidak mencukupi. Stok: ${produk.stokAwal}, dibutuhkan: ${produkItems[i].qtyDasar}`);
+                    }
+                }
+                const varianSnaps = await Promise.all(varianRefs.map(ref => getDoc(ref)));
+                for (let i = 0; i < varianItems.length; i++) {
+                    if (!varianSnaps[i].exists()) throw new Error(`Varian ${varianItems[i].nama} tidak ditemukan`);
+                    const varian = varianSnaps[i].data();
+                    if (varian.stok < varianItems[i].qty) {
+                        throw new Error(`Stok varian ${varianItems[i].nama} tidak mencukupi. Stok: ${varian.stok}, dibutuhkan: ${varianItems[i].qty}`);
+                    }
+                }
+
+                // Update stok (batch)
+                for (let i = 0; i < produkItems.length; i++) {
+                    const ref = produkRefs[i];
+                    const produk = produkSnaps[i].data();
+                    batch.update(ref, { stokAwal: produk.stokAwal - produkItems[i].qtyDasar, updatedAt: serverTimestamp() });
+                }
+                for (let i = 0; i < varianItems.length; i++) {
+                    const ref = varianRefs[i];
+                    const varian = varianSnaps[i].data();
+                    batch.update(ref, { stok: varian.stok - varianItems[i].qty, updatedAt: serverTimestamp() });
+                }
+
+                // Update piutang customer
+                if (selectedCustomer) {
+                    const custRef = doc(customerCol, selectedCustomer.id);
+                    let newOutstanding = selectedCustomer.outstanding || 0;
                     for (let item of cartItems) {
-                        if (item.type === 'bundle') {
-                            for (let child of item.childItems) {
-                                if (child.varianId) {
-                                    const ref = doc(varianCol, child.varianId);
-                                    varianRefs.push(ref);
-                                    varianItems.push(child);
-                                } else {
-                                    const ref = doc(produkCol, child.produkId);
-                                    produkRefs.push(ref);
-                                    produkItems.push({
-                                        produkId: child.produkId,
-                                        qtyDasar: child.qty,
-                                        nama: child.nama
-                                    });
-                                }
-                            }
-                        } else if (item.produkId === 'piutang') {
-                            continue;
-                        } else if (item.varianId) {
-                            const ref = doc(varianCol, item.varianId);
-                            varianRefs.push(ref);
-                            varianItems.push(item);
-                        } else {
-                            const ref = doc(produkCol, item.produkId);
-                            produkRefs.push(ref);
-                            produkItems.push(item);
-                        }
+                        if (item.produkId === 'piutang') newOutstanding -= item.subtotal;
                     }
-        
-                    const produkSnaps = await Promise.all(produkRefs.map(ref => transaction.get(ref)));
-                    for (let i = 0; i < produkItems.length; i++) {
-                        if (!produkSnaps[i].exists()) {
-                            throw new Error(`Produk ${produkItems[i].nama} tidak ditemukan`);
-                        }
-                        const produk = produkSnaps[i].data();
-                        if (produk.stokAwal < produkItems[i].qtyDasar) {
-                            throw new Error(`Stok ${produkItems[i].nama} tidak mencukupi. Stok: ${produk.stokAwal}, dibutuhkan: ${produkItems[i].qtyDasar}`);
-                        }
-                    }
-        
-                    const varianSnaps = await Promise.all(varianRefs.map(ref => transaction.get(ref)));
-                    for (let i = 0; i < varianItems.length; i++) {
-                        if (!varianSnaps[i].exists()) {
-                            throw new Error(`Varian ${varianItems[i].nama} tidak ditemukan`);
-                        }
-                        const varian = varianSnaps[i].data();
-                        if (varian.stok < varianItems[i].qty) {
-                            throw new Error(`Stok varian ${varianItems[i].nama} tidak mencukupi. Stok: ${varian.stok}, dibutuhkan: ${varianItems[i].qty}`);
-                        }
-                    }
-        
-                    for (let i = 0; i < produkItems.length; i++) {
-                        const ref = produkRefs[i];
-                        const produk = produkSnaps[i].data();
-                        const newStok = produk.stokAwal - produkItems[i].qtyDasar;
-                        transaction.update(ref, { stokAwal: newStok, updatedAt: serverTimestamp() });
-                    }
-        
-                    for (let i = 0; i < varianItems.length; i++) {
-                        const ref = varianRefs[i];
-                        const varian = varianSnaps[i].data();
-                        const newStok = varian.stok - varianItems[i].qty;
-                        transaction.update(ref, { stok: newStok, updatedAt: serverTimestamp() });
-                    }
-        
-                    if (selectedCustomer) {
-                        const custRef = doc(customerCol, selectedCustomer.id);
-                        let newOutstanding = selectedCustomer.outstanding || 0;
-                        for (let item of cartItems) {
-                            if (item.produkId === 'piutang') {
-                                newOutstanding -= item.subtotal;
-                            }
-                        }
-                        if (outstandingAdded > 0) {
-                            newOutstanding += outstandingAdded;
-                        }
-                        if (newOutstanding < 0) newOutstanding = 0;
-                        transaction.update(custRef, { outstanding: newOutstanding, updatedAt: serverTimestamp() });
-                    }
-        
-                    const salesData = {
-                        items: cartItems.map(item => ({
-                            produkId: item.produkId || null,
+                    if (outstandingAdded > 0) newOutstanding += outstandingAdded;
+                    if (newOutstanding < 0) newOutstanding = 0;
+                    batch.update(custRef, { outstanding: newOutstanding, updatedAt: serverTimestamp() });
+                }
+
+                // Hitung total pokok
+                let totalPokok = 0;
+                const itemsForFirestore = cartItems.map(item => {
+                    if (item.type === 'bundle') {
+                        totalPokok += item.subtotalPokok || 0;
+                        return {
+                            ...item,
+                            hargaPokok: null,
+                            subtotalPokok: item.subtotalPokok || 0,
+                            childItems: item.childItems.map(c => ({
+                                ...c,
+                                hargaPokok: c.hargaPokok || 0,
+                                subtotalPokok: c.subtotalPokok || 0
+                            }))
+                        };
+                    } else {
+                        const pokok = item.subtotalPokok || 0;
+                        totalPokok += pokok;
+                        return {
+                            produkId: item.produkId,
                             varianId: item.varianId || null,
                             konversiId: item.konversiId || null,
                             nama: item.nama,
                             qty: item.qty,
                             unit: item.unit || '',
                             hargaSatuan: item.hargaSatuan,
-                            subtotal: item.subtotal
-                        })),
-                        originalTotal: currentOriginalTotal,
-                        totalDiscount: currentTotalDiscount,
-                        finalTotal: currentTotalAfterDiscount,
-                        paidAmount: paidTotal,
-                        change: paidTotal - currentTotalAfterDiscount,
-                        customerId: selectedCustomer ? selectedCustomer.id : null,
-                        customerName: selectedCustomer ? selectedCustomer.nama : null,
-                        paymentMethods: paymentMethods,
-                        vouchers: selectedVouchers.map(v => ({ id: v.id, name: v.name, type: v.type, value: v.value })),
-                        manualDiscount: parseFloat(manualDiscountInput.value) || 0,
-                        createdAt: serverTimestamp()
-                    };
-                    const salesRef = doc(salesCol);
-                    transaction.set(salesRef, salesData);
+                            subtotal: item.subtotal,
+                            hargaPokok: item.hargaPokok || 0,
+                            subtotalPokok: item.subtotalPokok || 0
+                        };
+                    }
                 });
-        
+
+                const salesData = {
+                    items: itemsForFirestore,
+                    originalTotal: currentOriginalTotal,
+                    totalDiscount: currentTotalDiscount,
+                    finalTotal: currentTotalAfterDiscount,
+                    totalPokok: totalPokok,                     // <-- tambahan
+                    paidAmount: paidTotal,
+                    change: paidTotal - currentTotalAfterDiscount,
+                    outstanding: outstandingAdded > 0 ? outstandingAdded : 0,
+                    customerId: selectedCustomer ? selectedCustomer.id : null,
+                    customerName: selectedCustomer ? selectedCustomer.nama : null,
+                    paymentMethods: paymentMethods,
+                    vouchers: selectedVouchers.map(v => ({ id: v.id, name: v.name, type: v.type, value: v.value })),
+                    manualDiscount: parseFloat(manualDiscountInput.value) || 0,
+                    createdAt: serverTimestamp()
+                };
+
+                const salesRef = doc(salesCol);
+                batch.set(salesRef, salesData);
+
+                // Catat transaksi keuangan (pemasukan) jika ada pembayaran
+                if (paidTotal > 0) {
+                    const financeRef = doc(financeTransCol);
+                    const methodNames = paymentMethods.map(p => p.method).join(', ');
+                    batch.set(financeRef, {
+                        date: serverTimestamp(),
+                        description: `Penjualan #${salesRef.id.slice(-6)}`,
+                        category: 'Penjualan',
+                        type: 'income',
+                        amount: paidTotal,
+                        method: methodNames || 'Tunai',
+                        reference: salesRef.id,
+                        createdAt: serverTimestamp()
+                    });
+                }
+
+                await batch.commit();
+
+                // Data untuk struk
                 lastTransactionData = {
                     items: cartItems.map(item => ({
                         name: item.nama,
@@ -3157,9 +3218,9 @@
                     paidAmount: paidTotal,
                     change: paidTotal - currentTotalAfterDiscount,
                     date: new Date().toLocaleString('id-ID'),
-                    transactionNumber: 'TRX-' + Date.now()
+                    transactionNumber: salesRef.id.slice(-6)
                 };
-        
+
                 cartItems = [];
                 window.cartItems = cartItems;
                 selectedCustomer = null;
@@ -3168,19 +3229,21 @@
                 updateCartBadge();
                 renderCartModal();
                 closePaymentPage();
-        
+
                 alert(`Pembayaran berhasil! ${outstandingAdded > 0 ? 'Piutang dicatat.' : ''}`);
             } catch (error) {
                 console.error('Error executing payment:', error);
                 alert('Gagal memproses pembayaran: ' + error.message);
             }
         }
+
         function handlePostPayment() {
             if (confirm('Transaksi berhasil. Cetak struk sekarang?')) {
                 if (isPrinterConnected && lastTransactionData) doPrint(lastTransactionData);
                 else alert('Printer tidak terhubung atau data tidak ada');
             }
         }
+
         function updatePiutangButton() {
             if (selectedCustomer && selectedCustomer.outstanding > 0) {
                 btnPiutang.classList.add('active');
