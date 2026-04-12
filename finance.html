@@ -1000,7 +1000,7 @@
 
         document.getElementById('filterCashBtn').addEventListener('click', loadCashTransactions);
 
-        // ========== PIUTANG ==========
+        // ========== PIUTANG (DIPERBAIKI) ==========
         async function loadReceivables() {
             const tbody = document.getElementById('receivableBody');
             try {
@@ -1010,8 +1010,8 @@
                     return;
                 }
                 const map = new Map();
-                for (const doc of salesSnap.docs) {
-                    const s = doc.data();
+                for (const saleDoc of salesSnap.docs) {   // <-- PERBAIKAN: ganti nama variabel
+                    const s = saleDoc.data();
                     if (!s.customerId) continue;
                     const custSnap = await getDoc(doc(customerCol, s.customerId));
                     const custName = custSnap.exists() ? custSnap.data().nama : 'Unknown';
@@ -1030,7 +1030,7 @@
             }
         }
 
-        // ========== HUTANG ==========
+        // ========== HUTANG (DIPERBAIKI) ==========
         async function loadPayables() {
             const tbody = document.getElementById('payableBody');
             try {
@@ -1040,8 +1040,8 @@
                     return;
                 }
                 const map = new Map();
-                for (const doc of purchaseSnap.docs) {
-                    const p = doc.data();
+                for (const purchaseDoc of purchaseSnap.docs) {   // <-- PERBAIKAN: ganti nama variabel
+                    const p = purchaseDoc.data();
                     if (!p.supplierId) continue;
                     let suppName = 'Unknown';
                     try {
