@@ -154,6 +154,9 @@
             font-weight: 600;
             color: #006B54;
             text-align: right;
+            background: #f9f9f9;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
         }
 
         /* ===== LOGIN MODAL ===== */
@@ -316,6 +319,8 @@
         <div id="reportContent" class="table-responsive">
             <!-- diisi oleh JS -->
         </div>
+        <!-- Ringkasan Total (opsional) -->
+        <div id="reportSummary" class="summary-info" style="display:none;"></div>
     </main>
 
     <!-- Script sidebar (non-module) -->
@@ -449,6 +454,7 @@
         const tabPiutang = document.getElementById('tabPiutang');
         const filterBar = document.getElementById('filterBar');
         const reportContent = document.getElementById('reportContent');
+        const reportSummary = document.getElementById('reportSummary');
 
         let currentTab = 'produk';
         let localUser = null;
@@ -509,7 +515,7 @@
             updateLocalUI();
         });
 
-        // ========== FUNGSI LAPORAN (SAMA SEPERTI SEBELUMNYA) ==========
+        // ========== FUNGSI LAPORAN ==========
         async function initReportPage() {
             setTab('produk');
         }
@@ -621,8 +627,8 @@
                     where('createdAt', '<=', range.end)
                 ));
                 const productMap = new Map(); // produkId -> { nama, totalQty, totalRevenue }
-                for (const doc of salesSnap.docs) {
-                    const sale = doc.data();
+                for (const saleDoc of salesSnap.docs) {
+                    const sale = saleDoc.data();
                     if (sale.items && Array.isArray(sale.items)) {
                         for (const item of sale.items) {
                             const id = item.produkId;
@@ -645,18 +651,24 @@
                 }));
                 products.sort((a, b) => b.qty - a.qty); // laris ke atas
                 let html = '<table><thead><tr><th>Produk</th><th>Total Qty Terjual</th><th>Total Pendapatan</th></tr></thead><tbody>';
+                let totalRevenue = 0;
                 if (products.length === 0) {
                     html += '<tr><td colspan="3" style="text-align:center;">Tidak ada data</td></tr>';
                 } else {
                     products.forEach(p => {
                         html += `<tr><td>${p.nama}</td><td>${p.qty}</td><td>Rp ${p.revenue.toLocaleString()}</td></tr>`;
+                        totalRevenue += p.revenue;
                     });
                 }
                 html += '</tbody></table>';
                 reportContent.innerHTML = html;
+                // Tampilkan ringkasan total
+                reportSummary.style.display = 'block';
+                reportSummary.innerHTML = `Total Pendapatan: Rp ${totalRevenue.toLocaleString()}`;
             } catch (error) {
                 console.error(error);
                 reportContent.innerHTML = `<p style="color:red;">Gagal memuat: ${error.message}</p>`;
+                reportSummary.style.display = 'none';
             }
         }
 
@@ -670,28 +682,37 @@
                     where('createdAt', '<=', range.end)
                 ));
                 const hourMap = new Array(24).fill(0).map(() => ({ count: 0, revenue: 0 }));
-                for (const doc of salesSnap.docs) {
-                    const sale = doc.data();
+                for (const saleDoc of salesSnap.docs) {
+                    const sale = saleDoc.data();
                     const date = sale.createdAt?.toDate();
                     if (date) {
                         const hour = date.getHours();
                         hourMap[hour].count++;
-                        hourMap[hour].revenue += sale.total || 0;
+                        // Gunakan finalTotal jika ada, fallback ke total
+                        const amount = sale.finalTotal ?? sale.total ?? 0;
+                        hourMap[hour].revenue += amount;
                     }
                 }
                 let html = '<table><thead><tr><th>Jam</th><th>Jumlah Transaksi</th><th>Total Pendapatan</th></tr></thead><tbody>';
+                let totalTrans = 0, totalRev = 0;
                 for (let i = 0; i < 24; i++) {
-                    if (hourMap[i].count > 0) {
-                        html += `<tr><td>${i}:00 - ${i+1}:00</td><td>${hourMap[i].count}</td><td>Rp ${hourMap[i].revenue.toLocaleString()}</td></tr>`;
+                    const data = hourMap[i];
+                    if (data.count > 0) {
+                        html += `<tr><td>${i}:00 - ${i+1}:00</td><td>${data.count}</td><td>Rp ${data.revenue.toLocaleString()}</td></tr>`;
+                        totalTrans += data.count;
+                        totalRev += data.revenue;
                     } else {
                         html += `<tr><td>${i}:00 - ${i+1}:00</td><td>0</td><td>Rp 0</td></tr>`;
                     }
                 }
                 html += '</tbody></table>';
                 reportContent.innerHTML = html;
+                reportSummary.style.display = 'block';
+                reportSummary.innerHTML = `Total Transaksi: ${totalTrans} | Total Pendapatan: Rp ${totalRev.toLocaleString()}`;
             } catch (error) {
                 console.error(error);
                 reportContent.innerHTML = `<p style="color:red;">Gagal memuat: ${error.message}</p>`;
+                reportSummary.style.display = 'none';
             }
         }
 
@@ -705,8 +726,8 @@
                     where('createdAt', '<=', range.end)
                 ));
                 const custMap = new Map(); // customerId -> { nama, totalQty, totalRevenue }
-                for (const doc of salesSnap.docs) {
-                    const sale = doc.data();
+                for (const saleDoc of salesSnap.docs) {
+                    const sale = saleDoc.data();
                     const custId = sale.customerId || 'umum';
                     const custName = sale.customerName || 'Umum';
                     if (!custMap.has(custId)) {
@@ -718,7 +739,7 @@
                             c.totalQty += item.qty || 0;
                         });
                     }
-                    c.totalRevenue += sale.total || 0;
+                    c.totalRevenue += sale.finalTotal ?? sale.total ?? 0;
                 }
                 const customers = Array.from(custMap.entries()).map(([id, data]) => ({
                     id,
@@ -728,49 +749,61 @@
                 }));
                 customers.sort((a, b) => b.revenue - a.revenue);
                 let html = '<table><thead><tr><th>Pelanggan</th><th>Total Qty</th><th>Total Belanja</th></tr></thead><tbody>';
+                let totalCustRev = 0;
                 if (customers.length === 0) {
                     html += '<tr><td colspan="3" style="text-align:center;">Tidak ada data</td></tr>';
                 } else {
                     customers.forEach(c => {
                         html += `<tr><td>${c.nama}</td><td>${c.qty}</td><td>Rp ${c.revenue.toLocaleString()}</td></tr>`;
+                        totalCustRev += c.revenue;
                     });
                 }
                 html += '</tbody></table>';
                 reportContent.innerHTML = html;
+                reportSummary.style.display = 'block';
+                reportSummary.innerHTML = `Total Belanja Semua Pelanggan: Rp ${totalCustRev.toLocaleString()}`;
             } catch (error) {
                 console.error(error);
                 reportContent.innerHTML = `<p style="color:red;">Gagal memuat: ${error.message}</p>`;
+                reportSummary.style.display = 'none';
             }
         }
 
         // ========== LAPORAN UTANG ==========
         async function loadUtangReport() {
             try {
-                const purchaseSnap = await getDocs(query(purchaseCol, where('utang', '>', 0)));
+                // Gunakan field outstanding (bukan utang)
+                const purchaseSnap = await getDocs(query(purchaseCol, where('outstanding', '>', 0)));
                 if (purchaseSnap.empty) {
                     reportContent.innerHTML = '<p style="text-align:center;">Tidak ada utang</p>';
+                    reportSummary.style.display = 'none';
                     return;
                 }
                 const suppMap = new Map();
-                for (const doc of purchaseSnap.docs) {
-                    const p = doc.data();
+                for (const purchaseDoc of purchaseSnap.docs) {
+                    const p = purchaseDoc.data();
                     const suppId = p.supplierId;
                     const suppName = p.supplierName || 'Unknown';
                     if (!suppMap.has(suppId)) {
-                        suppMap.set(suppId, { nama: suppName, totalUtang: 0, transactions: [] });
+                        suppMap.set(suppId, { nama: suppName, totalUtang: 0 });
                     }
                     const item = suppMap.get(suppId);
-                    item.totalUtang += p.utang || 0;
+                    item.totalUtang += p.outstanding || 0;
                 }
                 let html = '<table><thead><tr><th>Supplier</th><th>Total Utang</th></tr></thead><tbody>';
+                let totalUtang = 0;
                 for (let [suppId, data] of suppMap.entries()) {
                     html += `<tr><td>${data.nama}</td><td>Rp ${data.totalUtang.toLocaleString()}</td></tr>`;
+                    totalUtang += data.totalUtang;
                 }
                 html += '</tbody></table>';
                 reportContent.innerHTML = html;
+                reportSummary.style.display = 'block';
+                reportSummary.innerHTML = `Total Utang: Rp ${totalUtang.toLocaleString()}`;
             } catch (error) {
                 console.error(error);
                 reportContent.innerHTML = `<p style="color:red;">Gagal memuat: ${error.message}</p>`;
+                reportSummary.style.display = 'none';
             }
         }
 
@@ -780,11 +813,12 @@
                 const salesSnap = await getDocs(query(salesCol, where('outstanding', '>', 0)));
                 if (salesSnap.empty) {
                     reportContent.innerHTML = '<p style="text-align:center;">Tidak ada piutang</p>';
+                    reportSummary.style.display = 'none';
                     return;
                 }
                 const custMap = new Map();
-                for (const doc of salesSnap.docs) {
-                    const s = doc.data();
+                for (const saleDoc of salesSnap.docs) {
+                    const s = saleDoc.data();
                     const custId = s.customerId;
                     const custName = s.customerName || 'Unknown';
                     if (!custMap.has(custId)) {
@@ -794,19 +828,25 @@
                     item.totalPiutang += s.outstanding || 0;
                 }
                 let html = '<table><thead><tr><th>Pelanggan</th><th>Total Piutang</th></tr></thead><tbody>';
+                let totalPiutang = 0;
                 for (let [custId, data] of custMap.entries()) {
                     html += `<tr><td>${data.nama}</td><td>Rp ${data.totalPiutang.toLocaleString()}</td></tr>`;
+                    totalPiutang += data.totalPiutang;
                 }
                 html += '</tbody></table>';
                 reportContent.innerHTML = html;
+                reportSummary.style.display = 'block';
+                reportSummary.innerHTML = `Total Piutang: Rp ${totalPiutang.toLocaleString()}`;
             } catch (error) {
                 console.error(error);
                 reportContent.innerHTML = `<p style="color:red;">Gagal memuat: ${error.message}</p>`;
+                reportSummary.style.display = 'none';
             }
         }
 
         // Fungsi utama memuat laporan sesuai tab
         function loadReport() {
+            reportSummary.style.display = 'none';
             if (currentTab === 'produk') loadProdukReport();
             else if (currentTab === 'hourly') loadHourlyReport();
             else if (currentTab === 'customer') loadCustomerReport();
