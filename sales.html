@@ -213,8 +213,8 @@
             font-size: 0.9rem;
             cursor: pointer;
         }
-        #btnPiutang { background:#ccc; color:#333; }
-        #btnPiutang.active { background:#dc3545; color:white; }
+        #btnBayarPiutang { background:#ccc; color:#333; }
+        #btnBayarPiutang.active { background:#dc3545; color:white; }
         #btnPayment { background:#006B54; color:white; }
 
         /* ===== PRODUK ===== */
@@ -1136,6 +1136,25 @@
             cursor: pointer;
             font-weight: 600;
         }
+
+        /* Modal Bayar Piutang (BARU) */
+        #modalBayarPiutang .modal-content {
+            max-width: 500px;
+        }
+        #modalBayarPiutang .modal-header {
+            background: #006B54;
+            color: white;
+            padding: 1rem 1.5rem;
+            margin: -1.5rem -1.5rem 1rem -1.5rem;
+            border-radius: 20px 20px 0 0;
+        }
+        #modalBayarPiutang .modal-header h3 {
+            color: white;
+            margin: 0;
+        }
+        #modalBayarPiutang .close-modal {
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -1220,7 +1239,8 @@
                 </div>
             </div>
             <div class="toolbar-row" style="justify-content: flex-end;">
-                <button id="btnPiutang"><i data-feather="alert-triangle"></i> Piutang</button>
+                <!-- Tombol Bayar Piutang menggantikan tombol Piutang lama -->
+                <button id="btnBayarPiutang"><i data-feather="credit-card"></i> Bayar Piutang</button>
                 <button id="btnPayment"><i data-feather="credit-card"></i> Payment</button>
             </div>
         </div>
@@ -1408,7 +1428,7 @@
         </div>
     </div>
 
-    <!-- MODAL KONFIRMASI PIUTANG -->
+    <!-- MODAL KONFIRMASI PIUTANG (saat checkout kurang bayar) -->
     <div class="modal" id="confirmPiutangModal">
         <div class="modal-content" style="max-width:400px;">
             <div class="modal-header">
@@ -1537,6 +1557,37 @@
         </div>
     </div>
 
+    <!-- MODAL BAYAR PIUTANG (BARU) -->
+    <div class="modal" id="modalBayarPiutang">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Pembayaran Piutang</h3>
+                <button class="close-modal" id="closeModalBayarPiutang">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Customer: <strong id="piutangCustomerName"></strong></p>
+                <p>Total Piutang: <strong id="piutangTotalOutstanding">Rp 0</strong></p>
+                <div class="form-group">
+                    <label>Jumlah Bayar (Rp)</label>
+                    <input type="number" id="piutangBayarAmount" class="form-input" min="0" step="1000" required>
+                </div>
+                <div class="form-group">
+                    <label>Metode Pembayaran</label>
+                    <select id="piutangMethod" class="form-input">
+                        <option value="Tunai">Tunai</option>
+                        <option value="Transfer">Transfer</option>
+                        <option value="Kartu">Kartu</option>
+                        <option value="E-Wallet">E-Wallet</option>
+                    </select>
+                </div>
+                <div class="payment-actions">
+                    <button class="btn-secondary" id="cancelBayarPiutang">Batal</button>
+                    <button class="btn-primary" id="prosesBayarPiutang">Proses</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Script sidebar (non-module) -->
     <script>
         feather.replace();
@@ -1628,7 +1679,7 @@
         });
     </script>
 
-    <!-- Script module utama (Firestore) dengan voucher -->
+    <!-- Script module utama (Firestore) dengan voucher dan pembayaran piutang -->
     <script type="module">
         import { auth, provider, dbCloud } from './js/firebase-config.js';
         import { signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
@@ -1764,7 +1815,7 @@
         const modalPendingList = document.getElementById('modalPendingList');
         const closeModalPendingList = document.getElementById('closeModalPendingList');
         const pendingListContainer = document.getElementById('pendingListContainer');
-        const btnPiutang = document.getElementById('btnPiutang');
+        const btnBayarPiutang = document.getElementById('btnBayarPiutang');
         const btnPayment = document.getElementById('btnPayment');
         const modalPayment = document.getElementById('modalPayment');
         const closeModalPayment = document.getElementById('closeModalPayment');
@@ -1809,10 +1860,19 @@
         const modalCreateVoucher = document.getElementById('modalCreateVoucher');
         const closeModalCreateVoucher = document.getElementById('closeModalCreateVoucher');
         const formCreateVoucher = document.getElementById('formCreateVoucher');
+        // Elemen Modal Bayar Piutang (BARU)
+        const modalBayarPiutang = document.getElementById('modalBayarPiutang');
+        const closeModalBayarPiutang = document.getElementById('closeModalBayarPiutang');
+        const piutangCustomerName = document.getElementById('piutangCustomerName');
+        const piutangTotalOutstanding = document.getElementById('piutangTotalOutstanding');
+        const piutangBayarAmount = document.getElementById('piutangBayarAmount');
+        const piutangMethod = document.getElementById('piutangMethod');
+        const prosesBayarPiutang = document.getElementById('prosesBayarPiutang');
+        const cancelBayarPiutang = document.getElementById('cancelBayarPiutang');
 
         // ========== FUNGSI FORMAT RUPIAH ==========
         function formatRupiah(angka) {
-            return 'Rp ' + angka.toLocaleString('id-ID');
+            return 'Rp ' + (angka || 0).toLocaleString('id-ID');
         }
 
         // ========== LOAD KONFIGURASI ==========
@@ -1863,7 +1923,7 @@
             }
         }
 
-        // ========== FUNGSI PRINTER (DIPERBAIKI TOTAL) ==========
+        // ========== FUNGSI PRINTER ==========
         function savePrinterConnection() {
             try {
                 const connectionData = {
@@ -1871,9 +1931,7 @@
                     timestamp: new Date().toISOString()
                 };
                 localStorage.setItem('printerConnection', JSON.stringify(connectionData));
-            } catch (e) {
-                console.error('Gagal menyimpan status printer:', e);
-            }
+            } catch (e) {}
         }
 
         function updatePrinterStatus(connected) {
@@ -1907,56 +1965,30 @@
         }
 
         async function autoReconnectPrinter() {
-            if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-                console.warn('Batas reconnect tercapai');
-                return;
-            }
-
+            if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) return;
             try {
-                if (!("serial" in navigator)) {
-                    console.warn('Web Serial API tidak didukung');
-                    return;
-                }
-
+                if (!("serial" in navigator)) return;
                 const ports = await navigator.serial.getPorts();
-                if (ports.length === 0) {
-                    console.log('Tidak ada port tersimpan, perlu koneksi manual');
-                    return;
-                }
-
+                if (ports.length === 0) return;
                 printerPort = ports[0];
-
-                // Cek apakah port sudah terbuka
                 try {
                     if (printerPort.readable || printerPort.writable) {
-                        if (!printerWriter) {
-                            printerWriter = printerPort.writable.getWriter();
-                        }
+                        if (!printerWriter) printerWriter = printerPort.writable.getWriter();
                         updatePrinterStatus(true);
                         reconnectAttempts = 0;
                         printerPort.addEventListener('disconnect', handlePrinterDisconnect);
-                        console.log('Auto-reconnect berhasil (port sudah terbuka)');
                         return;
                     }
-                } catch (e) {
-                    // Lanjutkan
-                }
-
+                } catch (e) {}
                 await printerPort.open({ baudRate: 9600 });
                 printerWriter = printerPort.writable.getWriter();
                 updatePrinterStatus(true);
                 reconnectAttempts = 0;
                 printerPort.addEventListener('disconnect', handlePrinterDisconnect);
-                console.log('Auto-reconnect berhasil');
             } catch (error) {
-                console.error('Auto-reconnect error:', error);
                 reconnectAttempts++;
-                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                    setTimeout(() => autoReconnectPrinter(), 2000);
-                } else {
-                    updatePrinterStatus(false);
-                    localStorage.removeItem('printerConnection');
-                }
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) setTimeout(autoReconnectPrinter, 2000);
+                else updatePrinterStatus(false);
             }
         }
 
@@ -1964,14 +1996,10 @@
             try {
                 const saved = localStorage.getItem('printerConnection');
                 if (saved) {
-                    const connectionData = JSON.parse(saved);
-                    const savedTime = new Date(connectionData.timestamp);
-                    const minutesDiff = (new Date() - savedTime) / (1000 * 60);
-
-                    // DURASI DIPERPANJANG MENJADI 2 JAM (120 MENIT)
-                    if (connectionData.isPrinterConnected && minutesDiff < 120) {
-                        // Coba reconnect otomatis
-                        setTimeout(() => autoReconnectPrinter(), 1000);
+                    const conn = JSON.parse(saved);
+                    const minutesDiff = (new Date() - new Date(conn.timestamp)) / (1000 * 60);
+                    if (conn.isPrinterConnected && minutesDiff < 120) {
+                        setTimeout(autoReconnectPrinter, 1000);
                     } else {
                         updatePrinterStatus(false);
                         localStorage.removeItem('printerConnection');
@@ -1980,7 +2008,6 @@
                     updatePrinterStatus(false);
                 }
             } catch (e) {
-                console.error('Error loading printer connection:', e);
                 updatePrinterStatus(false);
             }
         }
@@ -1991,16 +2018,11 @@
                     alert('Browser tidak mendukung Web Serial API. Gunakan Chrome/Edge.');
                     return false;
                 }
-
-                // Coba gunakan port yang sudah ada
                 const existingPorts = await navigator.serial.getPorts();
                 if (existingPorts.length > 0) {
                     printerPort = existingPorts[0];
-                    // Cek apakah sudah terbuka
                     if (printerPort.readable || printerPort.writable) {
-                        if (!printerWriter) {
-                            printerWriter = printerPort.writable.getWriter();
-                        }
+                        if (!printerWriter) printerWriter = printerPort.writable.getWriter();
                         updatePrinterStatus(true);
                         printerPort.addEventListener('disconnect', handlePrinterDisconnect);
                         return true;
@@ -2011,13 +2033,8 @@
                         updatePrinterStatus(true);
                         printerPort.addEventListener('disconnect', handlePrinterDisconnect);
                         return true;
-                    } catch (openError) {
-                        console.warn('Gagal membuka port yang sudah ada, minta port baru:', openError);
-                        // Lanjutkan ke requestPort
-                    }
+                    } catch (openError) {}
                 }
-
-                // Minta port baru
                 printerPort = await navigator.serial.requestPort();
                 await printerPort.open({ baudRate: 9600 });
                 printerWriter = printerPort.writable.getWriter();
@@ -2025,12 +2042,7 @@
                 printerPort.addEventListener('disconnect', handlePrinterDisconnect);
                 return true;
             } catch (error) {
-                if (error.name === 'NotFoundError') {
-                    console.log('User membatalkan pemilihan port');
-                } else {
-                    console.error('Connection error:', error);
-                    alert('Gagal terhubung ke printer: ' + error.message);
-                }
+                if (error.name !== 'NotFoundError') alert('Gagal terhubung ke printer: ' + error.message);
                 updatePrinterStatus(false);
                 return false;
             }
@@ -2038,28 +2050,18 @@
 
         async function disconnectFromPrinter() {
             try {
-                if (printerWriter) {
-                    await printerWriter.releaseLock();
-                    printerWriter = null;
-                }
-                if (printerPort) {
-                    await printerPort.close();
-                    printerPort = null;
-                }
+                if (printerWriter) await printerWriter.releaseLock();
+                if (printerPort) await printerPort.close();
                 updatePrinterStatus(false);
                 localStorage.removeItem('printerConnection');
             } catch (error) {
-                console.error('Disconnection error:', error);
                 updatePrinterStatus(false);
             }
         }
 
         async function togglePrinter() {
-            if (isPrinterConnected) {
-                await disconnectFromPrinter();
-            } else {
-                await connectToPrinter();
-            }
+            if (isPrinterConnected) await disconnectFromPrinter();
+            else await connectToPrinter();
         }
 
         function centerText(text, width) {
@@ -2074,12 +2076,9 @@
                 alert('Printer tidak terhubung');
                 return;
             }
-
             try {
                 const encoder = new TextEncoder();
                 let lineWidth = printerConfig.paperSize === '80mm' ? 48 : 32;
-
-                // Format tanggal
                 let dateStr;
                 const now = new Date();
                 switch (printerConfig.dateFormat) {
@@ -2095,84 +2094,50 @@
                     default:
                         dateStr = now.toLocaleString('id-ID');
                 }
-
                 let receipt = '\n';
                 if (printerConfig.headerText) {
-                    printerConfig.headerText.split('\n').forEach(line => {
-                        receipt += centerText(line, lineWidth) + '\n';
-                    });
+                    printerConfig.headerText.split('\n').forEach(line => receipt += centerText(line, lineWidth) + '\n');
                 }
                 if (printerConfig.infoText) {
-                    printerConfig.infoText.split('\n').forEach(line => {
-                        receipt += centerText(line, lineWidth) + '\n';
-                    });
+                    printerConfig.infoText.split('\n').forEach(line => receipt += centerText(line, lineWidth) + '\n');
                 }
-
                 receipt += '='.repeat(lineWidth) + '\n';
                 receipt += `Tanggal: ${dateStr}\n`;
                 if (printerConfig.printCashierName && auth.currentUser) {
-                    const kasir = auth.currentUser.displayName || auth.currentUser.email || 'Kasir';
-                    receipt += `Kasir  : ${kasir}\n`;
+                    receipt += `Kasir  : ${auth.currentUser.displayName || auth.currentUser.email || 'Kasir'}\n`;
                 }
                 receipt += `No.    : ${dataToPrint.transactionNumber}\n`;
                 receipt += '-'.repeat(lineWidth) + '\n';
-
                 dataToPrint.items.forEach(item => {
                     receipt += `${item.name}\n`;
                     receipt += `${item.qty} ${item.unit} x ${formatRupiah(item.price)} = ${formatRupiah(item.subtotal)}\n`;
                 });
-
                 receipt += '-'.repeat(lineWidth) + '\n';
                 receipt += `Subtotal : ${formatRupiah(dataToPrint.originalTotal)}\n`;
-                if (dataToPrint.totalDiscount > 0) {
-                    receipt += `Diskon   : -${formatRupiah(dataToPrint.totalDiscount)}\n`;
-                }
+                if (dataToPrint.totalDiscount > 0) receipt += `Diskon   : -${formatRupiah(dataToPrint.totalDiscount)}\n`;
                 receipt += `Total    : ${formatRupiah(dataToPrint.total)}\n`;
                 receipt += `Bayar    : ${formatRupiah(dataToPrint.paidAmount)}\n`;
                 receipt += `Kembali  : ${formatRupiah(dataToPrint.change)}\n`;
                 receipt += '='.repeat(lineWidth) + '\n';
-
-                let footerLines = [];
-                if (printerConfig.footerLines && printerConfig.footerLines.length) {
-                    footerLines = printerConfig.footerLines;
-                } else if (printerConfig.footerText) {
-                    footerLines = printerConfig.footerText.split('\n');
-                }
-                footerLines.forEach(line => {
-                    receipt += centerText(line, lineWidth) + '\n';
-                });
+                let footerLines = printerConfig.footerLines.length ? printerConfig.footerLines : printerConfig.footerText.split('\n');
+                footerLines.forEach(line => receipt += centerText(line, lineWidth) + '\n');
                 receipt += '\n\n\n';
-
                 await printerWriter.write(encoder.encode(receipt));
                 alert('Struk berhasil dicetak');
             } catch (error) {
                 console.error('Print error:', error);
                 alert('Gagal mencetak: ' + error.message);
-                if (error.message.includes('closed') || error.message.includes('disconnected')) {
-                    handlePrinterDisconnect();
-                }
+                if (error.message.includes('closed') || error.message.includes('disconnected')) handlePrinterDisconnect();
             }
         }
 
         async function printReceipt() {
-            if (!isPrinterConnected) {
-                alert('Printer belum terhubung');
-                return;
-            }
-
+            if (!isPrinterConnected) { alert('Printer belum terhubung'); return; }
             if (cartItems.length > 0) {
-                if (confirm('Transaksi belum diproses. Proses pembayaran sekarang?')) {
-                    // Trigger pembayaran
-                    document.getElementById('prosesPembayaranBtn').click();
-                }
+                if (confirm('Transaksi belum diproses. Proses pembayaran sekarang?')) prosesPembayaranBtn.click();
                 return;
             }
-
-            if (lastTransactionData) {
-                await doPrint(lastTransactionData);
-                return;
-            }
-
+            if (lastTransactionData) { await doPrint(lastTransactionData); return; }
             alert('Tidak ada data untuk dicetak.');
         }
 
@@ -2288,7 +2253,7 @@
                 newCart.push({ ...item, hargaSatuan: item.hargaNormal, subtotal: item.hargaNormal * item.qty });
             }
             cartItems = newCart;
-            window.cartItems = cartItems; // Update global reference
+            window.cartItems = cartItems;
             const produkIds = [...new Set(cartItems.map(item => item.produkId))];
             for (let pid of produkIds) { updateHargaProduk(pid); }
             if (trans.customerId) {
@@ -2452,7 +2417,6 @@
                 for (let item of items) { 
                     item.hargaSatuan = item.hargaNormal * faktor; 
                     item.subtotal = item.hargaSatuan * item.qty;
-                    // subtotal pokok tetap (tidak terpengaruh diskon harga jual)
                     item.subtotalPokok = (item.hargaPokok || 0) * item.qty;
                 }
             } else {
@@ -2464,27 +2428,27 @@
             }
         }
 
-        // ========== FUNGSI CART (DIPERBAIKI DENGAN HARGA POKOK) ==========
+        // ========== FUNGSI CART (DENGAN HARGA POKOK) ==========
         async function tambahKeCart(produkId, qty, konversiId = null, varianId = null) {
             const produk = allProducts.find(p => p.id === produkId);
             if (!produk) return;
             let konversi = null, varian = null, nilaiKonversi = 1;
             let hargaNormal = produk.hargaJual;
-            let hargaPokok = produk.hargaDasar || 0;  // <-- ambil harga pokok produk
+            let hargaPokok = produk.hargaDasar || 0;
             let stokTersedia = produk.stokAwal;
 
             if (varianId) {
                 varian = allVariants.find(v => v.id === varianId && v.produkId === produkId);
                 if (!varian) { alert('Varian tidak ditemukan'); return; }
                 hargaNormal = varian.hargaJual || produk.hargaJual;
-                hargaPokok = varian.hargaPokok ?? produk.hargaDasar ?? 0;  // <-- harga pokok varian
+                hargaPokok = varian.hargaPokok ?? produk.hargaDasar ?? 0;
                 stokTersedia = varian.stok || 0;
             } else if (konversiId) {
                 konversi = allKonversi.find(k => k.id === konversiId && k.produkId === produkId);
                 if (!konversi) { alert('Konversi tidak ditemukan'); return; }
                 nilaiKonversi = konversi.nilai;
                 hargaNormal = konversi.hargaJual || (produk.hargaJual * nilaiKonversi);
-                hargaPokok = konversi.hargaPokok ?? (produk.hargaDasar * nilaiKonversi);  // <-- harga pokok konversi
+                hargaPokok = konversi.hargaPokok ?? (produk.hargaDasar * nilaiKonversi);
             }
 
             const qtyDasar = varian ? qty : qty * nilaiKonversi;
@@ -2503,12 +2467,8 @@
                     produkId: produk.id, varianId: varianId, konversiId: konversiId,
                     nama: varian ? `${produk.nama} - ${varian.namaVarian}` : produk.nama,
                     unit: unit ? unit.nama : '', qty: qty, qtyDasar: qtyDasar,
-                    hargaNormal: hargaNormal,
-                    hargaSatuan: hargaNormal,
-                    subtotal: hargaNormal * qty,
-                    hargaPokok: hargaPokok,                    // <-- tambahan
-                    subtotalPokok: hargaPokok * qty,            // <-- tambahan
-                    nilaiKonversi: nilaiKonversi,
+                    hargaNormal: hargaNormal, hargaSatuan: hargaNormal, subtotal: hargaNormal * qty,
+                    hargaPokok: hargaPokok, subtotalPokok: hargaPokok * qty, nilaiKonversi: nilaiKonversi,
                 });
             }
             window.cartItems = cartItems;
@@ -2573,7 +2533,7 @@
                     const row = this.closest('tr'); const index = row.dataset.index; const item = cartItems[index]; const produkId = item.produkId;
                     cartItems.splice(index, 1);
                     window.cartItems = cartItems;
-                    if (produkId !== 'piutang' && produkId) updateHargaProduk(produkId);
+                    if (produkId && produkId !== 'piutang') updateHargaProduk(produkId);
                     renderCartModal(); updateCartBadge();
                 });
             });
@@ -2761,7 +2721,6 @@
                 const totalQty = bundleSelectedItems.reduce((sum, item) => sum + item.qty, 0);
                 if (totalQty < selectedPromo.minimalQty) { alert(`Jumlah item (${totalQty}) kurang dari minimal (${selectedPromo.minimalQty})`); return; }
                 const itemDetails = window.bundleItemDetails || [];
-                // Hitung total harga pokok untuk bundle
                 let bundleTotalPokok = 0;
                 const childItems = [];
                 for (let item of bundleSelectedItems) {
@@ -2782,8 +2741,7 @@
                 cartItems.push({ 
                     type: 'bundle', promoId: selectedPromo.id, nama: selectedPromo.nama, 
                     hargaSatuan: selectedPromo.harga, qty: 1, subtotal: selectedPromo.harga,
-                    childItems: childItems,
-                    subtotalPokok: bundleTotalPokok   // <-- tambahan
+                    childItems: childItems, subtotalPokok: bundleTotalPokok
                 });
                 window.cartItems = cartItems;
                 updateCartBadge(); renderCartModal(); modalBundle.classList.remove('active'); alert('Promo bundle ditambahkan ke keranjang');
@@ -3067,7 +3025,6 @@
                 const varianRefs = [];
                 const varianItems = [];
 
-                // Kumpulkan semua item untuk validasi stok (termasuk child bundle)
                 for (let item of cartItems) {
                     if (item.type === 'bundle') {
                         for (let child of item.childItems) {
@@ -3090,25 +3047,19 @@
                     }
                 }
 
-                // Validasi stok
                 const produkSnaps = await Promise.all(produkRefs.map(ref => getDoc(ref)));
                 for (let i = 0; i < produkItems.length; i++) {
                     if (!produkSnaps[i].exists()) throw new Error(`Produk ${produkItems[i].nama} tidak ditemukan`);
                     const produk = produkSnaps[i].data();
-                    if (produk.stokAwal < produkItems[i].qtyDasar) {
-                        throw new Error(`Stok ${produkItems[i].nama} tidak mencukupi. Stok: ${produk.stokAwal}, dibutuhkan: ${produkItems[i].qtyDasar}`);
-                    }
+                    if (produk.stokAwal < produkItems[i].qtyDasar) throw new Error(`Stok ${produkItems[i].nama} tidak mencukupi. Stok: ${produk.stokAwal}, dibutuhkan: ${produkItems[i].qtyDasar}`);
                 }
                 const varianSnaps = await Promise.all(varianRefs.map(ref => getDoc(ref)));
                 for (let i = 0; i < varianItems.length; i++) {
                     if (!varianSnaps[i].exists()) throw new Error(`Varian ${varianItems[i].nama} tidak ditemukan`);
                     const varian = varianSnaps[i].data();
-                    if (varian.stok < varianItems[i].qty) {
-                        throw new Error(`Stok varian ${varianItems[i].nama} tidak mencukupi. Stok: ${varian.stok}, dibutuhkan: ${varianItems[i].qty}`);
-                    }
+                    if (varian.stok < varianItems[i].qty) throw new Error(`Stok varian ${varianItems[i].nama} tidak mencukupi. Stok: ${varian.stok}, dibutuhkan: ${varianItems[i].qty}`);
                 }
 
-                // Update stok (batch)
                 for (let i = 0; i < produkItems.length; i++) {
                     const ref = produkRefs[i];
                     const produk = produkSnaps[i].data();
@@ -3120,19 +3071,15 @@
                     batch.update(ref, { stok: varian.stok - varianItems[i].qty, updatedAt: serverTimestamp() });
                 }
 
-                // Update piutang customer
                 if (selectedCustomer) {
                     const custRef = doc(customerCol, selectedCustomer.id);
                     let newOutstanding = selectedCustomer.outstanding || 0;
-                    for (let item of cartItems) {
-                        if (item.produkId === 'piutang') newOutstanding -= item.subtotal;
-                    }
+                    // Tidak ada lagi item 'piutang' di cart, jadi bagian ini bisa diabaikan
                     if (outstandingAdded > 0) newOutstanding += outstandingAdded;
                     if (newOutstanding < 0) newOutstanding = 0;
                     batch.update(custRef, { outstanding: newOutstanding, updatedAt: serverTimestamp() });
                 }
 
-                // Hitung total pokok
                 let totalPokok = 0;
                 const itemsForFirestore = cartItems.map(item => {
                     if (item.type === 'bundle') {
@@ -3141,26 +3088,16 @@
                             ...item,
                             hargaPokok: null,
                             subtotalPokok: item.subtotalPokok || 0,
-                            childItems: item.childItems.map(c => ({
-                                ...c,
-                                hargaPokok: c.hargaPokok || 0,
-                                subtotalPokok: c.subtotalPokok || 0
-                            }))
+                            childItems: item.childItems.map(c => ({ ...c, hargaPokok: c.hargaPokok || 0, subtotalPokok: c.subtotalPokok || 0 }))
                         };
                     } else {
                         const pokok = item.subtotalPokok || 0;
                         totalPokok += pokok;
                         return {
-                            produkId: item.produkId,
-                            varianId: item.varianId || null,
-                            konversiId: item.konversiId || null,
-                            nama: item.nama,
-                            qty: item.qty,
-                            unit: item.unit || '',
-                            hargaSatuan: item.hargaSatuan,
-                            subtotal: item.subtotal,
-                            hargaPokok: item.hargaPokok || 0,
-                            subtotalPokok: item.subtotalPokok || 0
+                            produkId: item.produkId, varianId: item.varianId || null, konversiId: item.konversiId || null,
+                            nama: item.nama, qty: item.qty, unit: item.unit || '',
+                            hargaSatuan: item.hargaSatuan, subtotal: item.subtotal,
+                            hargaPokok: item.hargaPokok || 0, subtotalPokok: item.subtotalPokok || 0
                         };
                     }
                 });
@@ -3170,7 +3107,7 @@
                     originalTotal: currentOriginalTotal,
                     totalDiscount: currentTotalDiscount,
                     finalTotal: currentTotalAfterDiscount,
-                    totalPokok: totalPokok,                     // <-- tambahan
+                    totalPokok: totalPokok,
                     paidAmount: paidTotal,
                     change: paidTotal - currentTotalAfterDiscount,
                     outstanding: outstandingAdded > 0 ? outstandingAdded : 0,
@@ -3185,7 +3122,6 @@
                 const salesRef = doc(salesCol);
                 batch.set(salesRef, salesData);
 
-                // Catat transaksi keuangan (pemasukan) jika ada pembayaran
                 if (paidTotal > 0) {
                     const financeRef = doc(financeTransCol);
                     const methodNames = paymentMethods.map(p => p.method).join(', ');
@@ -3203,7 +3139,6 @@
 
                 await batch.commit();
 
-                // Data untuk struk
                 lastTransactionData = {
                     items: cartItems.map(item => ({
                         name: item.nama,
@@ -3244,13 +3179,99 @@
             }
         }
 
+        // ========== FUNGSI BAYAR PIUTANG (BARU) ==========
         function updatePiutangButton() {
             if (selectedCustomer && selectedCustomer.outstanding > 0) {
-                btnPiutang.classList.add('active');
-                btnPiutang.style.background = '#dc3545';
+                btnBayarPiutang.style.background = '#dc3545';
+                btnBayarPiutang.style.color = 'white';
+                btnBayarPiutang.disabled = false;
             } else {
-                btnPiutang.classList.remove('active');
-                btnPiutang.style.background = '#ccc';
+                btnBayarPiutang.style.background = '#ccc';
+                btnBayarPiutang.style.color = '#333';
+                btnBayarPiutang.disabled = true;
+            }
+        }
+
+        btnBayarPiutang.addEventListener('click', () => {
+            if (!selectedCustomer) {
+                alert('Pilih customer terlebih dahulu');
+                return;
+            }
+            if (selectedCustomer.outstanding <= 0) {
+                alert('Customer tidak memiliki piutang');
+                return;
+            }
+            piutangCustomerName.textContent = selectedCustomer.nama;
+            piutangTotalOutstanding.textContent = formatRupiah(selectedCustomer.outstanding);
+            piutangBayarAmount.value = '';
+            modalBayarPiutang.classList.add('active');
+        });
+
+        closeModalBayarPiutang.addEventListener('click', () => modalBayarPiutang.classList.remove('active'));
+        cancelBayarPiutang.addEventListener('click', () => modalBayarPiutang.classList.remove('active'));
+
+        async function bayarPiutang(customerId, amount, method) {
+            const batch = writeBatch(dbCloud);
+            const q = query(salesCol, where('customerId', '==', customerId), where('outstanding', '>', 0), orderBy('createdAt', 'asc'));
+            const snap = await getDocs(q);
+            if (snap.empty) throw new Error('Tidak ada piutang ditemukan');
+            let remaining = amount;
+            const updates = [];
+            for (const saleDoc of snap.docs) {
+                if (remaining <= 0) break;
+                const sale = saleDoc.data();
+                const outstanding = sale.outstanding || 0;
+                const toPay = Math.min(remaining, outstanding);
+                updates.push({ ref: saleDoc.ref, outstanding: outstanding - toPay });
+                remaining -= toPay;
+            }
+            if (remaining > 0) throw new Error('Gagal mengalokasikan pembayaran');
+            updates.forEach(u => batch.update(u.ref, { outstanding: u.outstanding, updatedAt: serverTimestamp() }));
+            const custRef = doc(customerCol, customerId);
+            const custSnap = await getDoc(custRef);
+            if (custSnap.exists()) {
+                const currentOut = custSnap.data().outstanding || 0;
+                batch.update(custRef, { outstanding: Math.max(0, currentOut - amount), updatedAt: serverTimestamp() });
+            }
+            const financeRef = doc(financeTransCol);
+            batch.set(financeRef, {
+                date: serverTimestamp(),
+                description: `Pembayaran Piutang - ${selectedCustomer.nama}`,
+                category: 'Pembayaran Piutang',
+                type: 'income',
+                amount: amount,
+                method: method,
+                reference: customerId,
+                createdAt: serverTimestamp()
+            });
+            await batch.commit();
+        }
+
+        prosesBayarPiutang.addEventListener('click', async () => {
+            const amount = parseFloat(piutangBayarAmount.value);
+            if (isNaN(amount) || amount <= 0) { alert('Jumlah bayar harus lebih dari 0'); return; }
+            if (amount > selectedCustomer.outstanding) { alert('Jumlah bayar melebihi total piutang'); return; }
+            const method = piutangMethod.value;
+            if (!confirm(`Bayar piutang sebesar ${formatRupiah(amount)}?`)) return;
+            try {
+                await bayarPiutang(selectedCustomer.id, amount, method);
+                alert('Pembayaran piutang berhasil');
+                modalBayarPiutang.classList.remove('active');
+                await refreshCustomerData(selectedCustomer.id);
+                updatePiutangButton();
+            } catch (error) {
+                console.error(error);
+                alert('Gagal memproses pembayaran: ' + error.message);
+            }
+        });
+
+        async function refreshCustomerData(customerId) {
+            const custSnap = await getDoc(doc(customerCol, customerId));
+            if (custSnap.exists()) {
+                const updated = { id: custSnap.id, ...custSnap.data() };
+                const index = allCustomers.findIndex(c => c.id === customerId);
+                if (index !== -1) allCustomers[index] = updated;
+                if (selectedCustomer && selectedCustomer.id === customerId) selectedCustomer = updated;
             }
         }
 
@@ -3278,14 +3299,6 @@
         formPending.addEventListener('submit', async (e) => { e.preventDefault(); const kode = namaPending.value.trim(); if (!kode) { pendingCodeError.textContent = 'Kode harus diisi'; return; } const success = await savePendingTransaction(kode); if (success) { alert('Draft berhasil disimpan'); modalPending.classList.remove('active'); formPending.reset(); pendingCodeError.textContent = ''; cartItems = []; window.cartItems = cartItems; updateCartBadge(); renderCartModal(); } });
         floatingPending.addEventListener('click', () => { renderPendingList(); modalPendingList.classList.add('active'); });
         closeModalPendingList.addEventListener('click', () => modalPendingList.classList.remove('active'));
-        btnPiutang.addEventListener('click', () => {
-            if (!selectedCustomer) { alert('Pilih customer terlebih dahulu'); return; }
-            if (selectedCustomer.outstanding <= 0) { alert('Customer tidak memiliki piutang'); return; }
-            if (cartItems.find(item => item.produkId === 'piutang')) { alert('Piutang sudah ada di keranjang'); return; }
-            cartItems.push({ produkId: 'piutang', varianId: null, konversiId: null, nama: 'Piutang ' + selectedCustomer.nama, unit: '', qty: 1, qtyDasar: 1, hargaNormal: selectedCustomer.outstanding, hargaSatuan: selectedCustomer.outstanding, subtotal: selectedCustomer.outstanding, nilaiKonversi: 1 });
-            window.cartItems = cartItems;
-            updateCartBadge(); renderCartModal(); alert('Piutang ditambahkan ke cart');
-        });
         connectPrinterBtn.addEventListener('click', togglePrinter);
         printReceiptBtn.addEventListener('click', printReceipt);
         onAuthStateChanged(auth, (user) => { loginBtn.innerHTML = user ? '<i data-feather="log-out" width="18"></i><span>Logout</span>' : '<i data-feather="log-in" width="18"></i><span>Login</span>'; feather.replace(); });
